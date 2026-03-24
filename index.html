@@ -51,99 +51,80 @@
 
     <script>
         // --- CONFIGURATION SUPABASE ---
-        const SUPABASE_URL = 'TON_URL_ICI'; // Vérifie bien qu'il n'y a pas d'espace à la fin
-        const SUPABASE_KEY = 'TA_CLE_ANON_ICI';
+        const S_URL = 'TON_URL_ICI'; 
+        const S_KEY = 'TA_CLE_ANON_ICI';
         
-        // Initialisation avec vérification
-        let supabase;
-        try {
-            supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            console.log("Supabase initialisé avec succès");
-        } catch (e) {
-            alert("Erreur d'initialisation Supabase : " + e.message);
-        }
+        // Initialisation unique et propre
+        const sbClient = supabase.createClient(S_URL, S_KEY);
         
         const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
         let currentAction = 'fold';
-        let userRanges = {};
         
-        // --- AUTHENTIFICATION AVEC DEBUG ---
+        // --- AUTHENTIFICATION ---
         async function signIn() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const statusLabel = document.getElementById('status');
             
-            statusLabel.innerText = "Tentative de connexion...";
-        
             if (!email || !password) {
-                alert("Merci de remplir l'email et le mot de passe.");
+                alert("Email et mot de passe requis.");
                 return;
             }
         
-            // Test de connexion
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            statusLabel.innerText = "Connexion en cours...";
+        
+            // Tentative de connexion
+            const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
             
             if (error) {
-                console.log("Erreur de login, tentative d'inscription...", error.message);
-                
-                // Si l'erreur est "Invalid login credentials", on tente l'inscription
-                const { data: upData, error: signUpError } = await supabase.auth.signUp({ email, password });
-                
+                // Si échec, on tente l'inscription automatique
+                const { error: signUpError } = await sbClient.auth.signUp({ email, password });
                 if (signUpError) {
-                    alert("Erreur Supabase détaillée : " + signUpError.message);
+                    alert("Erreur : " + signUpError.message);
                     statusLabel.innerText = "Erreur : " + signUpError.message;
                 } else {
-                    alert("Compte créé ! Un email de confirmation a peut-être été envoyé (vérifie tes spams) ou connecte-toi si tu as désactivé la confirmation.");
-                    statusLabel.innerText = "Compte créé, en attente de validation.";
+                    alert("Compte créé ! Vérifie tes emails ou réessaie de te connecter.");
                 }
             } else {
-                alert("Connexion réussie !");
                 document.getElementById('login-overlay').style.display = 'none';
                 loadData();
             }
         }
         
-        // --- CHARGEMENT AVEC DEBUG ---
+        // --- CHARGEMENT ---
         async function loadData() {
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            
-            if (userError || !user) {
-                console.log("Aucun utilisateur connecté");
-                return;
-            }
+            document.getElementById('status').innerText = "Chargement des ranges...";
         
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('status').innerText = "Chargement de tes ranges...";
-        
-            const { data, error } = await supabase
+            const { data, error } = await sbClient
                 .from('ranges')
                 .select('*')
                 .eq('position', 'UTG');
         
             if (error) {
-                alert("Erreur lors de la lecture de la table 'ranges' : " + error.message + 
-                      "\nAssure-toi que la table existe et que les RLS sont configurées.");
-            }
-        
-            if (data) {
+                console.error("Erreur table:", error.message);
+            } else if (data) {
                 data.forEach(row => {
-                    userRanges[row.hand] = row.action;
                     const cell = document.querySelector(`[data-hand="${row.hand}"]`);
                     if (cell) cell.className = 'cell ' + row.action;
                 });
-                document.getElementById('status').innerText = "Ranges chargées (Cloud)";
+                document.getElementById('status').innerText = "Ranges synchronisées";
             }
         }
-
-        // --- INTERFACE ---
-        document.querySelectorAll('.tool').forEach(tool => {
-            tool.addEventListener('click', () => {
-                document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
-                tool.classList.add('active');
-                currentAction = tool.dataset.action;
-            });
-        });
-
+        
+        // --- SAUVEGARDE ---
+        async function updateHand(hand, action) {
+            const { data: { user } } = await sbClient.auth.getUser();
+            if (!user) return;
+        
+            await sbClient.from('ranges').upsert({ 
+                user_id: user.id, 
+                hand: hand, 
+                action: action, 
+                position: 'UTG'
+            }, { onConflict: 'user_id,hand,position' });
+        }
+        
+        // --- CONSTRUCTION GRILLE ---
         const grid = document.getElementById('pokerGrid');
         for (let i = 0; i < 13; i++) {
             for (let j = 0; j < 13; j++) {
@@ -152,7 +133,7 @@
                 cell.className = 'cell fold';
                 cell.textContent = hand;
                 cell.dataset.hand = hand;
-
+        
                 cell.onclick = () => {
                     cell.className = 'cell ' + currentAction;
                     updateHand(hand, currentAction);
@@ -160,10 +141,22 @@
                 grid.appendChild(cell);
             }
         }
-
-        // Vérifier session existante
-        supabase.auth.onAuthStateChange((event, session) => {
-            if (session) loadData();
+        
+        // Gestion de la palette
+        document.querySelectorAll('.tool').forEach(tool => {
+            tool.addEventListener('click', () => {
+                document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
+                tool.classList.add('active');
+                currentAction = tool.dataset.action;
+            });
+        });
+        
+        // Vérification session au démarrage
+        sbClient.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                document.getElementById('login-overlay').style.display = 'none';
+                loadData();
+            }
         });
     </script>
 </body>
