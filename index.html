@@ -24,7 +24,8 @@
         .fold { background: #2a2a2a; color: #555; }
         .action-blue { background: #3498db; color: white; } /* Open-Fold OU Fold */
         .action-green { background: #2ecc71; color: white; } /* Open-Call OU Call */
-        .action-red { background: #e74c3c; color: white; } /* 4Bet OU 3Bet */
+        .action-orange { background: #f39c12; color: white; } /* 3-BET / 4-BET */
+        .action-purple { background: #9b59b6; color: white; } /* ALL-IN */
 
         .palette { display: flex; gap: 5px; margin: 15px 0; }
         .tool { flex: 1; padding: 12px 5px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; font-weight: bold; font-size: 10px; text-align: center; }
@@ -101,7 +102,8 @@
             <div class="tool fold active" data-action="fold">FOLD</div>
             <div class="tool action-blue" id="btn-blue" data-action="action-blue">O-FOLD</div>
             <div class="tool action-green" id="btn-green" data-action="action-green">O-CALL</div>
-            <div class="tool action-red" id="btn-red" data-action="action-red">4BET/AI</div>
+            <div class="tool action-orange" id="btn-orange" data-action="action-orange">3/4-BET</div>
+            <div class="tool action-purple" id="btn-purple" data-action="action-purple">ALL-IN</div>
         </div>
 
         <div id="statsPanel" style="display: flex; gap: 10px; margin-bottom: 10px; width: 100%;">
@@ -131,11 +133,12 @@
         
             <h3 style="margin: 10px 0;">Action pour : <span id="quizHand" style="color: #f1c40f; font-size: 28px;">??</span></h3>
             
-            <div style="display: flex; gap: 8px; margin-top: 15px;">
-                <button onclick="checkQuiz('fold')" style="flex:1; padding: 15px; background: #2a2a2a; border-radius: 5px; color: white; border: 1px solid #444; font-weight: bold;">FOLD</button>
-                <button onclick="checkQuiz('action-blue')" id="q-blue" style="flex:1; padding: 15px; background: #3498db; border-radius: 5px; color: white; border: none; font-weight: bold;">...</button>
-                <button onclick="checkQuiz('action-green')" id="q-green" style="flex:1; padding: 15px; background: #2ecc71; border-radius: 5px; color: white; border: none; font-weight: bold;">...</button>
-                <button onclick="checkQuiz('action-red')" id="q-red" style="flex:1; padding: 15px; background: #e74c3c; border-radius: 5px; color: white; border: none; font-weight: bold;">...</button>
+            <div style="display: flex; gap: 5px; margin-top: 15px; flex-wrap: wrap;">
+                <button onclick="checkQuiz('fold')" style="flex:1; padding: 12px; background: #2a2a2a; color: white; border-radius: 5px; border: 1px solid #444;">FOLD</button>
+                <button onclick="checkQuiz('action-blue')" id="q-blue" style="flex:1; padding: 12px; background: #3498db; color: white; border-radius: 5px; border: none;">...</button>
+                <button onclick="checkQuiz('action-green')" id="q-green" style="flex:1; padding: 12px; background: #2ecc71; color: white; border-radius: 5px; border: none;">...</button>
+                <button onclick="checkQuiz('action-orange')" id="q-orange" style="flex:1; padding: 12px; background: #f39c12; color: white; border-radius: 5px; border: none;">...</button>
+                <button onclick="checkQuiz('action-purple')" id="q-purple" style="flex:1; padding: 12px; background: #9b59b6; color: white; border-radius: 5px; border: none;">...</button>
             </div>
             
             <button onclick="toggleQuiz()" style="margin-top: 20px; background: none; color: #bdc3c7; border: 1px solid #7f8c8d; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;">Abandonner le test</button>
@@ -154,23 +157,24 @@
         let currentAction = 'fold';
 
         const labels = {
-            'RFI': { blue: 'O-FOLD', green: 'O-CALL', red: '4BET/AI' },
-            'DEFENSE': { blue: 'FOLD', green: 'CALL', red: '3BET/AI' }
+            'RFI': { blue: 'O-FOLD', green: 'O-CALL', orange: '4-BET', purple: 'ALL-IN' },
+            'DEFENSE': { blue: 'FOLD', green: 'CALL', orange: '3-BET', purple: 'ALL-IN' }
         };
-
+        
         function switchTab(tab) {
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.add('active');
             
-            // Afficher/Masquer le sélecteur d'adversaire
-            const vsContainer = document.getElementById('vsPosContainer');
-            vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none';
-        
-            // Update labels
-            document.getElementById('btn-blue').innerText = labels[tab].blue;
-            document.getElementById('btn-green').innerText = labels[tab].green;
-            document.getElementById('btn-red').innerText = labels[tab].red;
+            // Mise à jour des textes des boutons de la palette et du quiz
+            const btns = ['blue', 'green', 'orange', 'purple'];
+            btns.forEach(color => {
+                const label = labels[tab][color];
+                document.getElementById(`btn-${color}`).innerText = label;
+                if(document.getElementById(`q-${color}`)) {
+                    document.getElementById(`q-${color}`).innerText = label;
+                }
+            });
         
             refreshData();
         }
@@ -334,29 +338,29 @@
         //fonction maj stats
         function updateStats() {
             const cells = document.querySelectorAll('.cell');
-            let totalCombos = 0;
-            let playedCombos = 0;
-            let aggroCombos = 0;
+            let totalCombos = 0, playedCombos = 0, aggroCombos = 0;
         
             cells.forEach(cell => {
                 const hand = cell.dataset.hand;
-                // Calcul du nombre de combinaisons (Paire: 6, Suité: 4, Offsuit: 12)
                 let weight = hand.includes('s') ? 4 : (hand.includes('o') ? 12 : 6);
                 totalCombos += weight;
         
-                if (cell.classList.contains('action-blue') || cell.classList.contains('action-green') || cell.classList.contains('action-red')) {
+                const hasClass = (c) => cell.classList.contains(c);
+        
+                // VPIP : Toutes les couleurs sauf fold
+                if (hasClass('action-blue') || hasClass('action-green') || 
+                    hasClass('action-orange') || hasClass('action-purple')) {
                     playedCombos += weight;
                 }
-                if (cell.classList.contains('action-red')) {
+                
+                // PFR : Orange (3/4-bet) et Purple (All-in)
+                if (hasClass('action-orange') || hasClass('action-purple')) {
                     aggroCombos += weight;
                 }
             });
         
-            const vpip = ((playedCombos / totalCombos) * 100).toFixed(1);
-            const pfr = ((aggroCombos / totalCombos) * 100).toFixed(1);
-        
-            document.getElementById('statVPIP').innerText = vpip + "%";
-            document.getElementById('statPFR').innerText = pfr + "%";
+            document.getElementById('statVPIP').innerText = ((playedCombos / totalCombos) * 100).toFixed(1) + "%";
+            document.getElementById('statPFR').innerText = ((aggroCombos / totalCombos) * 100).toFixed(1) + "%";
         }
         //fonction reset
         async function resetCurrentRange() {
