@@ -72,6 +72,15 @@
                     <option value="SB">SB</option>
                 </select>
             </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button onclick="copyCurrentRange()" style="flex: 1; padding: 8px; background: #444; color: #fff; border: 1px solid #666; border-radius: 4px; font-size: 11px; cursor: pointer;">
+                    📋 Copier cette range
+                </button>
+                <button id="pasteBtn" onclick="pasteRange()" style="flex: 1; padding: 8px; background: #27ae60; color: #fff; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; display: none;">
+                    📥 Coller ici
+                </button>
+            </div>
         </div>
 
         <div class="palette" id="palette">
@@ -194,6 +203,63 @@
                 refreshData();
             }
         });
+
+        let copiedRangeData = null;
+
+        function copyCurrentRange() {
+            // On récupère toutes les cellules qui ne sont pas "fold"
+            const cells = document.querySelectorAll('.cell');
+            let dataToCopy = [];
+            
+            cells.forEach(cell => {
+                const action = Array.from(cell.classList).find(cls => cls.startsWith('action-') || cls === 'fold');
+                if (action && action !== 'fold') {
+                    dataToCopy.push({ hand: cell.dataset.hand, action: action });
+                }
+            });
+        
+            if (dataToCopy.length === 0) {
+                alert("La range actuelle est vide.");
+                return;
+            }
+        
+            copiedRangeData = dataToCopy;
+            document.getElementById('pasteBtn').style.display = 'block';
+            document.getElementById('status').innerText = "Range copiée ! Change de position pour coller.";
+        }
+        
+        async function pasteRange() {
+            if (!copiedRangeData) return;
+        
+            const pos = document.getElementById('posSelect').value;
+            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
+            const { data: { user } } = await sbClient.auth.getUser();
+        
+            if (!confirm(`Écraser la range actuelle (${pos} ${currentTab === 'DEFENSE' ? 'vs ' + vsPos : ''}) avec les données copiées ?`)) return;
+        
+            document.getElementById('status').innerText = "Collage en cours...";
+        
+            // Préparation des données pour l'upsert massif
+            const upsertData = copiedRangeData.map(item => ({
+                user_id: user.id,
+                hand: item.hand,
+                action: item.action,
+                position: pos,
+                situation: currentTab,
+                vs_position: vsPos
+            }));
+        
+            // On commence par vider la range actuelle en base pour cette position précise (Optionnel mais propre)
+            // Puis on insère les nouvelles
+            const { error } = await sbClient.from('ranges').upsert(upsertData, { onConflict: 'user_id,hand,position,situation,vs_position' });
+        
+            if (error) {
+                alert("Erreur lors du collage : " + error.message);
+            } else {
+                document.getElementById('status').innerText = "Range collée avec succès !";
+                refreshData();
+            }
+        }
     </script>
 </body>
 </html>
