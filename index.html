@@ -52,6 +52,20 @@
 
         <div class="controls">
             <div style="display: flex; flex-direction: column; gap: 5px;">
+                <label style="font-size: 11px; color: #f39c12; font-weight: bold;">TAILLE DU STACK</label>
+                <select id="stackSelect" onchange="refreshData()" style="border-color: #f39c12;">
+                    <option value="100">100 BB</option>
+                    <option value="80">80 BB</option>
+                    <option value="60">60 BB</option>
+                    <option value="40">40 BB</option>
+                    <option value="30">30 BB</option>
+                    <option value="20">20 BB</option>
+                    <option value="14">14 BB</option>
+                    <option value="10">10 BB</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 5px;">
                 <label style="font-size: 11px; color: #888;">MA POSITION</label>
                 <select id="posSelect" onchange="refreshData()">
                     <option value="HJ">HJ</option>
@@ -127,23 +141,25 @@
         
         async function refreshData() {
             const pos = document.getElementById('posSelect').value;
+            const stack = document.getElementById('stackSelect').value;
             const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
             
             document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
-            document.getElementById('status').innerText = "Sync...";
+            document.getElementById('status').innerText = "Sync " + stack + "BB...";
         
             const { data } = await sbClient.from('ranges')
                 .select('*')
                 .eq('position', pos)
                 .eq('situation', currentTab)
-                .eq('vs_position', vsPos);
+                .eq('vs_position', vsPos)
+                .eq('stack_depth', parseInt(stack)); // Filtrage par stack
         
             if (data) {
                 data.forEach(row => {
                     const cell = document.querySelector(`[data-hand="${row.hand}"]`);
                     if (cell) cell.className = 'cell ' + row.action;
                 });
-                document.getElementById('status').innerText = (currentTab === 'RFI') ? `Open ${pos}` : `${pos} vs ${vsPos}`;
+                document.getElementById('status').innerText = `${pos} - ${stack}BB Sync`;
             }
         }
         
@@ -152,6 +168,7 @@
             if (!user) return;
         
             const pos = document.getElementById('posSelect').value;
+            const stack = document.getElementById('stackSelect').value;
             const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
         
             await sbClient.from('ranges').upsert({ 
@@ -160,9 +177,13 @@
                 action: action, 
                 position: pos, 
                 situation: currentTab,
-                vs_position: vsPos
-            }, { onConflict: 'user_id,hand,position,situation,vs_position' });
+                vs_position: vsPos,
+                stack_depth: parseInt(stack) // Sauvegarde du stack
+            }, { onConflict: 'user_id,hand,position,situation,vs_position,stack_depth' });
         }
+        
+        // N'oublie pas de mettre à jour copyCurrentRange et pasteRange 
+        // pour qu'ils prennent en compte le 'stackSelect' lors du collage !
 
         // Init Grille
         const grid = document.getElementById('pokerGrid');
@@ -205,9 +226,9 @@
         });
 
         let copiedRangeData = null;
-
+        let copiedSourceInfo = ""; // Pour afficher ce qu'on a en mémoire
+        
         function copyCurrentRange() {
-            // On récupère toutes les cellules qui ne sont pas "fold"
             const cells = document.querySelectorAll('.cell');
             let dataToCopy = [];
             
@@ -223,40 +244,49 @@
                 return;
             }
         
+            const pos = document.getElementById('posSelect').value;
+            const stack = document.getElementById('stackSelect').value;
+            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
+        
             copiedRangeData = dataToCopy;
+            copiedSourceInfo = `${pos} ${stack}BB ${currentTab === 'DEFENSE' ? 'vs ' + vsPos : '(RFI)'}`;
+            
             document.getElementById('pasteBtn').style.display = 'block';
-            document.getElementById('status').innerText = "Range copiée ! Change de position pour coller.";
+            document.getElementById('status').innerText = "Copié : " + copiedSourceInfo;
         }
         
         async function pasteRange() {
             if (!copiedRangeData) return;
         
-            const pos = document.getElementById('posSelect').value;
-            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
+            const targetPos = document.getElementById('posSelect').value;
+            const targetStack = document.getElementById('stackSelect').value;
+            const targetVsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
             const { data: { user } } = await sbClient.auth.getUser();
         
-            if (!confirm(`Écraser la range actuelle (${pos} ${currentTab === 'DEFENSE' ? 'vs ' + vsPos : ''}) avec les données copiées ?`)) return;
+            const confirmMsg = `Coller la range de [${copiedSourceInfo}] \nVERS \n[${targetPos} ${targetStack}BB ${currentTab === 'DEFENSE' ? 'vs ' + targetVsPos : '(RFI)'}] ?`;
+            
+            if (!confirm(confirmMsg)) return;
         
             document.getElementById('status').innerText = "Collage en cours...";
         
-            // Préparation des données pour l'upsert massif
             const upsertData = copiedRangeData.map(item => ({
                 user_id: user.id,
                 hand: item.hand,
                 action: item.action,
-                position: pos,
+                position: targetPos,
                 situation: currentTab,
-                vs_position: vsPos
+                vs_position: targetVsPos,
+                stack_depth: parseInt(targetStack)
             }));
         
-            // On commence par vider la range actuelle en base pour cette position précise (Optionnel mais propre)
-            // Puis on insère les nouvelles
-            const { error } = await sbClient.from('ranges').upsert(upsertData, { onConflict: 'user_id,hand,position,situation,vs_position' });
+            const { error } = await sbClient.from('ranges').upsert(upsertData, { 
+                onConflict: 'user_id,hand,position,situation,vs_position,stack_depth' 
+            });
         
             if (error) {
-                alert("Erreur lors du collage : " + error.message);
+                alert("Erreur : " + error.message);
             } else {
-                document.getElementById('status').innerText = "Range collée avec succès !";
+                document.getElementById('status').innerText = "Collage réussi !";
                 refreshData();
             }
         }
