@@ -196,6 +196,8 @@
         }
         
         async function refreshData() {
+            updateVsPosOptions(); //maj des positions (sélecteur attaquant)
+            
             const pos = document.getElementById('posSelect').value;
             const stack = document.getElementById('stackSelect').value;
             const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
@@ -492,6 +494,35 @@
         
             alert(`Terminé ! \nScore : ${score} / 20 \n\n${appreciation}`);
             toggleQuiz();
+        }
+
+        //gestion des positions dynamique
+        const POSITION_ORDER = ["UTG", "UTG+1", "MP", "HJ", "CO", "BTN", "SB", "BB"];
+
+        function updateVsPosOptions() {
+            const myPos = document.getElementById('posSelect').value;
+            const vsSelect = document.getElementById('vsPosSelect');
+            const myIndex = POSITION_ORDER.indexOf(myPos);
+        
+            // On vide les options actuelles
+            vsSelect.innerHTML = "";
+        
+            // On n'ajoute que les positions AVANT nous dans l'ordre de la table
+            for (let i = 0; i < myIndex; i++) {
+                const opt = document.createElement('option');
+                opt.value = POSITION_ORDER[i];
+                opt.innerText = POSITION_ORDER[i];
+                vsSelect.appendChild(opt);
+            }
+        
+            // Si on est UTG, il n'y a personne avant. On peut soit désactiver, 
+            // soit afficher un message "N/A".
+            if (vsSelect.options.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = "NONE";
+                opt.innerText = "Personne (RFI)";
+                vsSelect.appendChild(opt);
+            }
         }
     </script>
 </body>
