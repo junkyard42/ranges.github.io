@@ -51,74 +51,88 @@
 
     <script>
         // --- CONFIGURATION SUPABASE ---
-        const SUPABASE_URL = 'https://mvncrfuuleirfainulqw.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_37-jBATzeAe-59hocDBXbg_-Pxmx0Pu';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+        const SUPABASE_URL = 'TON_URL_ICI'; // Vérifie bien qu'il n'y a pas d'espace à la fin
+        const SUPABASE_KEY = 'TA_CLE_ANON_ICI';
+        
+        // Initialisation avec vérification
+        let supabase;
+        try {
+            supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log("Supabase initialisé avec succès");
+        } catch (e) {
+            alert("Erreur d'initialisation Supabase : " + e.message);
+        }
+        
         const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
         let currentAction = 'fold';
         let userRanges = {};
-
-        // --- AUTHENTIFICATION ---
+        
+        // --- AUTHENTIFICATION AVEC DEBUG ---
         async function signIn() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const statusLabel = document.getElementById('status');
+            
+            statusLabel.innerText = "Tentative de connexion...";
+        
+            if (!email || !password) {
+                alert("Merci de remplir l'email et le mot de passe.");
+                return;
+            }
+        
+            // Test de connexion
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
             
             if (error) {
-                // Tentative d'inscription si l'utilisateur n'existe pas
-                const { error: signUpError } = await supabase.auth.signUp({ email, password });
-                if (signUpError) alert(signUpError.message);
-                else alert("Compte créé ! Vérifie tes emails (ou reconnecte-toi).");
+                console.log("Erreur de login, tentative d'inscription...", error.message);
+                
+                // Si l'erreur est "Invalid login credentials", on tente l'inscription
+                const { data: upData, error: signUpError } = await supabase.auth.signUp({ email, password });
+                
+                if (signUpError) {
+                    alert("Erreur Supabase détaillée : " + signUpError.message);
+                    statusLabel.innerText = "Erreur : " + signUpError.message;
+                } else {
+                    alert("Compte créé ! Un email de confirmation a peut-être été envoyé (vérifie tes spams) ou connecte-toi si tu as désactivé la confirmation.");
+                    statusLabel.innerText = "Compte créé, en attente de validation.";
+                }
             } else {
+                alert("Connexion réussie !");
                 document.getElementById('login-overlay').style.display = 'none';
                 loadData();
             }
         }
-
-        async function signOut() {
-            await supabase.auth.signOut();
-            location.reload();
-        }
-
-        // --- GESTION DES DONNÉES ---
+        
+        // --- CHARGEMENT AVEC DEBUG ---
         async function loadData() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            
+            if (userError || !user) {
+                console.log("Aucun utilisateur connecté");
+                return;
+            }
+        
             document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('status').innerText = "Synchronisation...";
-
+            document.getElementById('status').innerText = "Chargement de tes ranges...";
+        
             const { data, error } = await supabase
                 .from('ranges')
                 .select('*')
                 .eq('position', 'UTG');
-
+        
+            if (error) {
+                alert("Erreur lors de la lecture de la table 'ranges' : " + error.message + 
+                      "\nAssure-toi que la table existe et que les RLS sont configurées.");
+            }
+        
             if (data) {
                 data.forEach(row => {
                     userRanges[row.hand] = row.action;
                     const cell = document.querySelector(`[data-hand="${row.hand}"]`);
                     if (cell) cell.className = 'cell ' + row.action;
                 });
+                document.getElementById('status').innerText = "Ranges chargées (Cloud)";
             }
-            document.getElementById('status').innerText = "Connecté au Cloud";
-        }
-
-        async function updateHand(hand, action) {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { error } = await supabase
-                .from('ranges')
-                .upsert({ 
-                    user_id: user.id, 
-                    hand: hand, 
-                    action: action, 
-                    position: 'UTG',
-                    stack_depth: 100 
-                }, { onConflict: 'user_id,hand,position,stack_depth' });
-
-            if (error) console.error("Erreur de sauvegarde:", error);
         }
 
         // --- INTERFACE ---
