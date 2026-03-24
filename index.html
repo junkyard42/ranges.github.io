@@ -104,6 +104,17 @@
             <div class="tool action-red" id="btn-red" data-action="action-red">4BET/AI</div>
         </div>
 
+        <div id="statsPanel" style="display: flex; gap: 10px; margin-bottom: 10px; width: 100%;">
+            <div style="flex: 1; background: #2a2a2a; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid #3498db;">
+                <span style="display: block; font-size: 10px; color: #888; text-transform: uppercase;">Fréquence Jouée</span>
+                <span id="statVPIP" style="font-size: 18px; font-weight: bold; color: white;">0.0%</span>
+            </div>
+            <div style="flex: 1; background: #2a2a2a; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid #e74c3c;">
+                <span style="display: block; font-size: 10px; color: #888; text-transform: uppercase;">Fréquence Aggro</span>
+                <span id="statPFR" style="font-size: 18px; font-weight: bold; color: white;">0.0%</span>
+            </div>
+        </div>
+
         <div id="pokerGrid" class="grid"></div>
         <div id="status" class="status">Connecté</div>
     </div>
@@ -159,7 +170,13 @@
                     const cell = document.querySelector(`[data-hand="${row.hand}"]`);
                     if (cell) cell.className = 'cell ' + row.action;
                 });
+                //mise à jour des stats
+                updateStats(); 
+                
                 document.getElementById('status').innerText = `${pos} - ${stack}BB Sync`;
+            } else {
+                // Si aucune donnée n'est trouvée, on met quand même à jour (0.0%)
+                updateStats();
             }
         }
         
@@ -181,9 +198,6 @@
                 stack_depth: parseInt(stack) // Sauvegarde du stack
             }, { onConflict: 'user_id,hand,position,situation,vs_position,stack_depth' });
         }
-        
-        // N'oublie pas de mettre à jour copyCurrentRange et pasteRange 
-        // pour qu'ils prennent en compte le 'stackSelect' lors du collage !
 
         // Init Grille
         const grid = document.getElementById('pokerGrid');
@@ -197,6 +211,8 @@
                 cell.onclick = () => {
                     cell.className = 'cell ' + currentAction;
                     updateHand(hand, currentAction);
+                    //maj des stats
+                    updateStats();
                 };
                 grid.appendChild(cell);
             }
@@ -289,6 +305,33 @@
                 document.getElementById('status').innerText = "Collage réussi !";
                 refreshData();
             }
+        }
+
+        function updateStats() {
+            const cells = document.querySelectorAll('.cell');
+            let totalCombos = 0;
+            let playedCombos = 0;
+            let aggroCombos = 0;
+        
+            cells.forEach(cell => {
+                const hand = cell.dataset.hand;
+                // Calcul du nombre de combinaisons (Paire: 6, Suité: 4, Offsuit: 12)
+                let weight = hand.includes('s') ? 4 : (hand.includes('o') ? 12 : 6);
+                totalCombos += weight;
+        
+                if (cell.classList.contains('action-blue') || cell.classList.contains('action-green') || cell.classList.contains('action-red')) {
+                    playedCombos += weight;
+                }
+                if (cell.classList.contains('action-red')) {
+                    aggroCombos += weight;
+                }
+            });
+        
+            const vpip = ((playedCombos / totalCombos) * 100).toFixed(1);
+            const pfr = ((aggroCombos / totalCombos) * 100).toFixed(1);
+        
+            document.getElementById('statVPIP').innerText = vpip + "%";
+            document.getElementById('statPFR').innerText = pfr + "%";
         }
     </script>
 </body>
