@@ -168,19 +168,30 @@
         
         function switchTab(tab) {
             currentTab = tab;
+            
+            // 1. Gérer l'apparence des onglets
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.add('active');
             
-            // Mise à jour des textes des boutons de la palette et du quiz
+            // 2. AFFICHER / MASQUER le sélecteur d'adversaire (La partie qui te manque sûrement)
+            const vsContainer = document.getElementById('vsPosContainer');
+            if (vsContainer) {
+                vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none';
+            }
+        
+            // 3. Mettre à jour les labels des boutons (Palette & Quiz)
             const btns = ['blue', 'green', 'orange', 'purple'];
             btns.forEach(color => {
                 const label = labels[tab][color];
-                document.getElementById(`btn-${color}`).innerText = label;
-                if(document.getElementById(`q-${color}`)) {
+                if (document.getElementById(`btn-${color}`)) {
+                    document.getElementById(`btn-${color}`).innerText = label;
+                }
+                if (document.getElementById(`q-${color}`)) {
                     document.getElementById(`q-${color}`).innerText = label;
                 }
             });
         
+            // 4. Recharger les données
             refreshData();
         }
         
