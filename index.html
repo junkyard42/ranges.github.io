@@ -65,6 +65,14 @@
                     <option value="10">10 BB</option>
                 </select>
             </div>
+
+            <div class="quick-presets" style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+                <button onclick="applyPreset('RFI', 'BTN', 'ANY')" style="flex: 1.2; padding: 10px; background: #2980b9; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer;">🔥 RFI BTN</button>
+                
+                <button onclick="applyPreset('DEFENSE', 'BB', 'BTN')" style="flex: 1; padding: 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d; border-radius: 4px; font-size: 11px; cursor: pointer;">🎯 BB vs BTN</button>
+                <button onclick="applyPreset('DEFENSE', 'SB', 'BTN')" style="flex: 1; padding: 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d; border-radius: 4px; font-size: 11px; cursor: pointer;">🎯 SB vs BTN</button>
+                <button onclick="applyPreset('DEFENSE', 'SB', 'CO')" style="flex: 1; padding: 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d; border-radius: 4px; font-size: 11px; cursor: pointer;">🎯 SB vs CO</button>
+            </div>
             
             <div style="display: flex; flex-direction: column; gap: 5px;">
                 <label style="font-size: 11px; color: #888;">MA POSITION</label>
@@ -526,6 +534,31 @@
                     vsSelect.value = previousSelection;
                 }
             }
+        }
+
+        //raccourcis
+        function applyPreset(situation, myPos, vsPos) {
+            // 1. Changer l'onglet (Open ou Défense)
+            switchTab(situation);
+        
+            // 2. Changer ma position
+            const posSelect = document.getElementById('posSelect');
+            posSelect.value = myPos;
+        
+            // 3. Mettre à jour la liste des adversaires possibles (crucial pour que vsPos existe)
+            updateVsPosOptions();
+        
+            // 4. Sélectionner l'adversaire
+            const vsPosSelect = document.getElementById('vsPosSelect');
+            if (vsPosSelect) {
+                vsPosSelect.value = vsPos;
+            }
+        
+            // 5. Rafraîchir la grille avec ces nouveaux paramètres
+            refreshData();
+            
+            // Petit feedback visuel
+            console.log(`Preset appliqué : ${myPos} vs ${vsPos} (${situation})`);
         }
     </script>
 </body>
