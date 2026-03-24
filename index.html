@@ -118,6 +118,19 @@
         <div id="pokerGrid" class="grid"></div>
         <div id="status" class="status">Connecté</div>
         <button onclick="resetCurrentRange()" style="flex: 0.5; padding: 10px; background: #c0392b; border: none; color: white; border-radius: 6px; font-size: 11px;">🗑️ Reset</button>
+
+        <div id="quizSection" style="display:none; background: #2c3e50; padding: 15px; border-radius: 10px; text-align: center; margin-top: 20px;">
+            <h3 style="margin-top: 0;">Mode Quiz : <span id="quizHand" style="color: #f1c40f; font-size: 24px;">??</span></h3>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button onclick="checkQuiz('fold')" style="flex:1; padding: 15px; background: #2a2a2a; border-radius: 5px; color: white; border: none;">FOLD</button>
+                <button onclick="checkQuiz('action-blue')" id="q-blue" style="flex:1; padding: 15px; background: #3498db; border-radius: 5px; color: white; border: none;">...</button>
+                <button onclick="checkQuiz('action-green')" id="q-green" style="flex:1; padding: 15px; background: #2ecc71; border-radius: 5px; color: white; border: none;">...</button>
+                <button onclick="checkQuiz('action-red')" id="q-red" style="flex:1; padding: 15px; background: #e74c3c; border-radius: 5px; color: white; border: none;">...</button>
+            </div>
+            <button onclick="toggleQuiz()" style="margin-top: 15px; background: none; color: #bdc3c7; border: 1px solid #7f8c8d; padding: 5px 10px; border-radius: 4px; font-size: 11px;">Quitter le Quiz</button>
+        </div>
+        
+        <button id="btnStartQuiz" onclick="toggleQuiz()" style="margin-top: 20px; width: 100%; padding: 12px; background: #f1c40f; color: #000; font-weight: bold; border-radius: 6px; border: none; cursor: pointer;">🎓 TESTER MES CONNAISSANCES</button>
     </div>
 
     <script>
@@ -241,7 +254,7 @@
                 refreshData();
             }
         });
-
+        //fonction copier
         let copiedRangeData = null;
         let copiedSourceInfo = ""; // Pour afficher ce qu'on a en mémoire
         
@@ -271,7 +284,7 @@
             document.getElementById('pasteBtn').style.display = 'block';
             document.getElementById('status').innerText = "Copié : " + copiedSourceInfo;
         }
-        
+        //fonction coller
         async function pasteRange() {
             if (!copiedRangeData) return;
         
@@ -307,7 +320,7 @@
                 refreshData();
             }
         }
-
+        //fonction maj stats
         function updateStats() {
             const cells = document.querySelectorAll('.cell');
             let totalCombos = 0;
@@ -334,7 +347,7 @@
             document.getElementById('statVPIP').innerText = vpip + "%";
             document.getElementById('statPFR').innerText = pfr + "%";
         }
-
+        //fonction reset
         async function resetCurrentRange() {
             const pos = document.getElementById('posSelect').value;
             const stack = document.getElementById('stackSelect').value;
@@ -359,6 +372,60 @@
                 document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
                 updateStats();
                 document.getElementById('status').innerText = "Range effacée.";
+            }
+        }
+        //Quiz
+        let quizActive = false;
+        let currentQuizHand = "";
+        let quizCorrectAction = "";
+        
+        function toggleQuiz() {
+            quizActive = !quizActive;
+            const quizDiv = document.getElementById('quizSection');
+            const gridDiv = document.getElementById('pokerGrid');
+            const btnStart = document.getElementById('btnStartQuiz');
+            
+            if (quizActive) {
+                // Préparer les labels des boutons
+                document.getElementById('q-blue').innerText = labels[currentTab].blue;
+                document.getElementById('q-green').innerText = labels[currentTab].green;
+                document.getElementById('q-red').innerText = labels[currentTab].red;
+                
+                quizDiv.style.display = 'block';
+                gridDiv.style.visibility = 'hidden'; // On cache la grille pour ne pas tricher
+                btnStart.style.display = 'none';
+                nextQuizHand();
+            } else {
+                quizDiv.style.display = 'none';
+                gridDiv.style.visibility = 'visible';
+                btnStart.style.display = 'block';
+            }
+        }
+        
+        function nextQuizHand() {
+            const allHands = [];
+            document.querySelectorAll('.cell').forEach(c => allHands.push(c.dataset.hand));
+            
+            // Tirage aléatoire
+            currentQuizHand = allHands[Math.floor(Math.random() * allHands.length)];
+            document.getElementById('quizHand').innerText = currentQuizHand;
+            
+            // On trouve la bonne réponse dans la grille masquée
+            const cell = document.querySelector(`[data-hand="${currentQuizHand}"]`);
+            quizCorrectAction = Array.from(cell.classList).find(cls => cls.startsWith('action-') || cls === 'fold');
+        }
+        
+        function checkQuiz(userAction) {
+            if (userAction === quizCorrectAction) {
+                document.getElementById('quizSection').style.background = "#27ae60"; // Vert flash
+                setTimeout(() => {
+                    document.getElementById('quizSection').style.background = "#2c3e50";
+                    nextQuizHand();
+                }, 300);
+            } else {
+                document.getElementById('quizSection').style.background = "#e74c3c"; // Rouge erreur
+                alert(`Erreur ! La bonne action pour ${currentQuizHand} était : ${quizCorrectAction.replace('action-', '').toUpperCase()}`);
+                document.getElementById('quizSection').style.background = "#2c3e50";
             }
         }
     </script>
