@@ -119,15 +119,26 @@
         <div id="status" class="status">Connecté</div>
         <button onclick="resetCurrentRange()" style="flex: 0.5; padding: 10px; background: #c0392b; border: none; color: white; border-radius: 6px; font-size: 11px;">🗑️ Reset</button>
 
-        <div id="quizSection" style="display:none; background: #2c3e50; padding: 15px; border-radius: 10px; text-align: center; margin-top: 20px;">
-            <h3 style="margin-top: 0;">Mode Quiz : <span id="quizHand" style="color: #f1c40f; font-size: 24px;">??</span></h3>
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button onclick="checkQuiz('fold')" style="flex:1; padding: 15px; background: #2a2a2a; border-radius: 5px; color: white; border: none;">FOLD</button>
-                <button onclick="checkQuiz('action-blue')" id="q-blue" style="flex:1; padding: 15px; background: #3498db; border-radius: 5px; color: white; border: none;">...</button>
-                <button onclick="checkQuiz('action-green')" id="q-green" style="flex:1; padding: 15px; background: #2ecc71; border-radius: 5px; color: white; border: none;">...</button>
-                <button onclick="checkQuiz('action-red')" id="q-red" style="flex:1; padding: 15px; background: #e74c3c; border-radius: 5px; color: white; border: none;">...</button>
+        <div id="quizSection" style="display:none; background: #2c3e50; padding: 15px; border-radius: 10px; text-align: center; margin-top: 20px; transition: background 0.3s;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 12px; color: #bdc3c7;">
+                <span>Question : <b id="quizCount">1</b> / 20</span>
+                <span>Score : <b id="quizScore">0</b> / 20</span>
             </div>
-            <button onclick="toggleQuiz()" style="margin-top: 15px; background: none; color: #bdc3c7; border: 1px solid #7f8c8d; padding: 5px 10px; border-radius: 4px; font-size: 11px;">Quitter le Quiz</button>
+            
+            <div style="width: 100%; height: 4px; background: #34495e; border-radius: 2px; margin-bottom: 15px;">
+                <div id="quizProgress" style="width: 0%; height: 100%; background: #f1c40f; border-radius: 2px; transition: width 0.3s;"></div>
+            </div>
+        
+            <h3 style="margin: 10px 0;">Action pour : <span id="quizHand" style="color: #f1c40f; font-size: 28px;">??</span></h3>
+            
+            <div style="display: flex; gap: 8px; margin-top: 15px;">
+                <button onclick="checkQuiz('fold')" style="flex:1; padding: 15px; background: #2a2a2a; border-radius: 5px; color: white; border: 1px solid #444; font-weight: bold;">FOLD</button>
+                <button onclick="checkQuiz('action-blue')" id="q-blue" style="flex:1; padding: 15px; background: #3498db; border-radius: 5px; color: white; border: none; font-weight: bold;">...</button>
+                <button onclick="checkQuiz('action-green')" id="q-green" style="flex:1; padding: 15px; background: #2ecc71; border-radius: 5px; color: white; border: none; font-weight: bold;">...</button>
+                <button onclick="checkQuiz('action-red')" id="q-red" style="flex:1; padding: 15px; background: #e74c3c; border-radius: 5px; color: white; border: none; font-weight: bold;">...</button>
+            </div>
+            
+            <button onclick="toggleQuiz()" style="margin-top: 20px; background: none; color: #bdc3c7; border: 1px solid #7f8c8d; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;">Abandonner le test</button>
         </div>
         
         <button id="btnStartQuiz" onclick="toggleQuiz()" style="margin-top: 20px; width: 100%; padding: 12px; background: #f1c40f; color: #000; font-weight: bold; border-radius: 6px; border: none; cursor: pointer;">🎓 TESTER MES CONNAISSANCES</button>
@@ -378,6 +389,8 @@
         let quizActive = false;
         let currentQuizHand = "";
         let quizCorrectAction = "";
+        let questionsDone = 0;
+        let score = 0;
         
         function toggleQuiz() {
             quizActive = !quizActive;
@@ -386,47 +399,79 @@
             const btnStart = document.getElementById('btnStartQuiz');
             
             if (quizActive) {
-                // Préparer les labels des boutons
+                // Reset des stats du quiz
+                questionsDone = 0;
+                score = 0;
+                updateQuizUI();
+                
                 document.getElementById('q-blue').innerText = labels[currentTab].blue;
                 document.getElementById('q-green').innerText = labels[currentTab].green;
                 document.getElementById('q-red').innerText = labels[currentTab].red;
                 
                 quizDiv.style.display = 'block';
-                gridDiv.style.visibility = 'hidden'; // On cache la grille pour ne pas tricher
+                gridDiv.style.display = 'none'; // On cache complètement la grille
                 btnStart.style.display = 'none';
                 nextQuizHand();
             } else {
                 quizDiv.style.display = 'none';
-                gridDiv.style.visibility = 'visible';
+                gridDiv.style.display = 'grid';
                 btnStart.style.display = 'block';
             }
         }
         
+        function updateQuizUI() {
+            document.getElementById('quizCount').innerText = questionsDone + 1;
+            document.getElementById('quizScore').innerText = score;
+            const progress = (questionsDone / 20) * 100;
+            document.getElementById('quizProgress').style.width = progress + "%";
+        }
+        
         function nextQuizHand() {
+            if (questionsDone >= 20) {
+                finishQuiz();
+                return;
+            }
+            
             const allHands = [];
             document.querySelectorAll('.cell').forEach(c => allHands.push(c.dataset.hand));
             
-            // Tirage aléatoire
             currentQuizHand = allHands[Math.floor(Math.random() * allHands.length)];
             document.getElementById('quizHand').innerText = currentQuizHand;
             
-            // On trouve la bonne réponse dans la grille masquée
             const cell = document.querySelector(`[data-hand="${currentQuizHand}"]`);
-            quizCorrectAction = Array.from(cell.classList).find(cls => cls.startsWith('action-') || cls === 'fold');
+            quizCorrectAction = Array.from(cell.classList).find(cls => cls.startsWith('action-') || cls === 'fold') || 'fold';
+            
+            updateQuizUI();
         }
         
         function checkQuiz(userAction) {
+            const quizBox = document.getElementById('quizSection');
+            
             if (userAction === quizCorrectAction) {
-                document.getElementById('quizSection').style.background = "#27ae60"; // Vert flash
-                setTimeout(() => {
-                    document.getElementById('quizSection').style.background = "#2c3e50";
-                    nextQuizHand();
-                }, 300);
+                score++;
+                quizBox.style.background = "#1e8449"; // Succès éphémère
             } else {
-                document.getElementById('quizSection').style.background = "#e74c3c"; // Rouge erreur
-                alert(`Erreur ! La bonne action pour ${currentQuizHand} était : ${quizCorrectAction.replace('action-', '').toUpperCase()}`);
-                document.getElementById('quizSection').style.background = "#2c3e50";
+                quizBox.style.background = "#922b21"; // Erreur éphémère
+                alert(`Faux ! Pour ${currentQuizHand}, l'action était : ${quizCorrectAction.replace('action-', '').toUpperCase()}`);
             }
+        
+            questionsDone++;
+            
+            setTimeout(() => {
+                quizBox.style.background = "#2c3e50";
+                nextQuizHand();
+            }, 200);
+        }
+        
+        function finishQuiz() {
+            let appreciation = "";
+            if (score === 20) appreciation = "Parfait ! Tu maîtrises cette range.";
+            else if (score >= 15) appreciation = "Très bien, encore un petit effort.";
+            else if (score >= 10) appreciation = "Moyen, relis tes ranges.";
+            else appreciation = "Aïe... il faut retourner bosser la théorie !";
+        
+            alert(`Terminé ! \nScore : ${score} / 20 \n\n${appreciation}`);
+            toggleQuiz();
         }
     </script>
 </body>
