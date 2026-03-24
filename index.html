@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Range Cloud - UTG 100BB</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; }
+        .container { background: #1e1e1e; padding: 15px; border-radius: 12px; width: 100%; max-width: 600px; box-sizing: border-box; }
+        .grid { display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; margin-top: 15px; }
+        .cell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; cursor: pointer; border-radius: 2px; user-select: none; border: 1px solid rgba(255,255,255,0.05); }
+        
+        .fold { background: #2a2a2a; color: #555; }
+        .open-fold { background: #3498db; color: white; }
+        .open-call { background: #2ecc71; color: white; }
+        .open-4bet { background: #e74c3c; color: white; }
+
+        .palette { display: flex; gap: 5px; margin-bottom: 15px; justify-content: space-between; }
+        .tool { flex: 1; padding: 8px 2px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; font-weight: bold; font-size: 10px; text-align: center; }
+        .tool.active { border-color: white; }
+        
+        .status { font-size: 11px; color: #888; text-align: center; margin-top: 10px; }
+        #login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 10px; }
+        input { padding: 10px; border-radius: 5px; border: none; width: 250px; }
+        button { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <h3>Connexion Poker Range</h3>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Mot de passe">
+        <button onclick="signIn()">Se connecter / S'inscrire</button>
+        <p style="font-size: 11px; color: #666;">Note : Si l'email n'existe pas, un compte sera créé.</p>
+    </div>
+
+    <div class="container">
+        <div class="palette" id="palette">
+            <div class="tool fold active" data-action="fold">FOLD</div>
+            <div class="tool open-fold" data-action="open-fold">OPEN-F</div>
+            <div class="tool open-call" data-action="open-call">OPEN-C</div>
+            <div class="tool open-4bet" data-action="open-4bet">4BET/AI</div>
+        </div>
+
+        <div id="pokerGrid" class="grid"></div>
+        <div class="status" id="status">Chargement...</div>
+        <button onclick="signOut()" style="margin-top: 15px; background: #444; width: 100%;">Déconnexion</button>
+    </div>
+
+    <script>
+        // --- CONFIGURATION SUPABASE ---
+        const SUPABASE_URL = 'https://supabase.com/dashboard/project/mvncrfuuleirfainulqw';
+        const SUPABASE_KEY = 'https://mvncrfuuleirfainulqw.supabase.co';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+        let currentAction = 'fold';
+        let userRanges = {};
+
+        // --- AUTHENTIFICATION ---
+        async function signIn() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            
+            if (error) {
+                // Tentative d'inscription si l'utilisateur n'existe pas
+                const { error: signUpError } = await supabase.auth.signUp({ email, password });
+                if (signUpError) alert(signUpError.message);
+                else alert("Compte créé ! Vérifie tes emails (ou reconnecte-toi).");
+            } else {
+                document.getElementById('login-overlay').style.display = 'none';
+                loadData();
+            }
+        }
+
+        async function signOut() {
+            await supabase.auth.signOut();
+            location.reload();
+        }
+
+        // --- GESTION DES DONNÉES ---
+        async function loadData() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('status').innerText = "Synchronisation...";
+
+            const { data, error } = await supabase
+                .from('ranges')
+                .select('*')
+                .eq('position', 'UTG');
+
+            if (data) {
+                data.forEach(row => {
+                    userRanges[row.hand] = row.action;
+                    const cell = document.querySelector(`[data-hand="${row.hand}"]`);
+                    if (cell) cell.className = 'cell ' + row.action;
+                });
+            }
+            document.getElementById('status').innerText = "Connecté au Cloud";
+        }
+
+        async function updateHand(hand, action) {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { error } = await supabase
+                .from('ranges')
+                .upsert({ 
+                    user_id: user.id, 
+                    hand: hand, 
+                    action: action, 
+                    position: 'UTG',
+                    stack_depth: 100 
+                }, { onConflict: 'user_id,hand,position,stack_depth' });
+
+            if (error) console.error("Erreur de sauvegarde:", error);
+        }
+
+        // --- INTERFACE ---
+        document.querySelectorAll('.tool').forEach(tool => {
+            tool.addEventListener('click', () => {
+                document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
+                tool.classList.add('active');
+                currentAction = tool.dataset.action;
+            });
+        });
+
+        const grid = document.getElementById('pokerGrid');
+        for (let i = 0; i < 13; i++) {
+            for (let j = 0; j < 13; j++) {
+                let hand = (i < j) ? ranks[i]+ranks[j]+"s" : (i > j) ? ranks[j]+ranks[i]+"o" : ranks[i]+ranks[j];
+                const cell = document.createElement('div');
+                cell.className = 'cell fold';
+                cell.textContent = hand;
+                cell.dataset.hand = hand;
+
+                cell.onclick = () => {
+                    cell.className = 'cell ' + currentAction;
+                    updateHand(hand, currentAction);
+                };
+                grid.appendChild(cell);
+            }
+        }
+
+        // Vérifier session existante
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session) loadData();
+        });
+    </script>
+</body>
+</html>
