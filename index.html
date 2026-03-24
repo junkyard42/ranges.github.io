@@ -3,65 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poker Range Cloud v2</title>
+    <title>Poker Playbook Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; }
-        .container { background: #1e1e1e; padding: 20px; border-radius: 12px; width: 100%; max-width: 550px; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+        .container { background: #1e1e1e; padding: 15px; border-radius: 12px; width: 100%; max-width: 500px; box-sizing: border-box; }
         
-        /* Sélecteur de position */
-        .pos-header { margin-bottom: 15px; }
-        select { width: 100%; padding: 12px; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 6px; font-weight: bold; font-size: 14px; outline: none; cursor: pointer; }
-        
-        .grid { display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; margin: 15px 0; }
-        .cell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: clamp(7px, 2vw, 10px); font-weight: 700; cursor: pointer; border-radius: 2px; user-select: none; border: 1px solid rgba(255,255,255,0.03); }
-        
-        .fold { background: #2a2a2a; color: #555; }
-        .open-fold { background: #3498db; color: white; }
-        .open-call { background: #2ecc71; color: white; }
-        .open-4bet { background: #e74c3c; color: white; }
+        /* Onglets */
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #2a2a2a; padding: 5px; border-radius: 8px; }
+        .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 6px; font-weight: bold; font-size: 13px; color: #888; }
+        .tab.active { background: #3498db; color: white; }
 
-        .palette { display: flex; gap: 5px; margin-bottom: 10px; }
-        .tool { flex: 1; padding: 10px 5px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; font-weight: bold; font-size: 11px; text-align: center; transition: 0.2s; }
-        .tool.active { border-color: white; transform: translateY(-2px); }
+        .controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        select { width: 100%; padding: 10px; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 6px; font-size: 13px; }
+
+        .grid { display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; }
+        .cell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; cursor: pointer; border-radius: 2px; border: 1px solid rgba(255,255,255,0.03); }
+        
+        /* Couleurs Dynamiques */
+        .fold { background: #2a2a2a; color: #555; }
+        .action-blue { background: #3498db; color: white; } /* Open-Fold OU Fold */
+        .action-green { background: #2ecc71; color: white; } /* Open-Call OU Call */
+        .action-red { background: #e74c3c; color: white; } /* 4Bet OU 3Bet */
+
+        .palette { display: flex; gap: 5px; margin: 15px 0; }
+        .tool { flex: 1; padding: 12px 5px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; font-weight: bold; font-size: 10px; text-align: center; }
+        .tool.active { border-color: white; }
         
         #login-overlay { position: fixed; inset: 0; background: #121212; display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 15px; }
-        input { padding: 12px; border-radius: 6px; border: 1px solid #333; width: 280px; background: #1e1e1e; color: white; }
-        .btn-main { padding: 12px 24px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 280px; }
-        .status { font-size: 12px; color: #888; margin-top: 10px; }
+        input { padding: 12px; border-radius: 6px; border: 1px solid #333; width: 250px; background: #1e1e1e; color: white; }
+        .status { font-size: 11px; color: #666; margin-top: 10px; text-align: center; }
     </style>
 </head>
 <body>
 
     <div id="login-overlay">
-        <h2 style="margin-bottom: 5px;">Accès Restreint</h2>
-        <p style="color: #666; font-size: 13px; margin-bottom: 10px;">Connectez-vous pour gérer vos ranges</p>
+        <h2>Poker Vault</h2>
         <input type="email" id="email" placeholder="Email">
         <input type="password" id="password" placeholder="Mot de passe">
-        <button class="btn-main" onclick="signIn()">Se connecter</button>
+        <button onclick="signIn()" style="padding: 12px 250px; background: #3498db; border: none; color: white; border-radius: 6px; cursor: pointer; font-weight: bold;">Connexion</button>
     </div>
 
     <div class="container">
-        <div class="pos-header">
-            <select id="positionSelect" onchange="changePosition()">
-                <option value="UTG">UTG (Under The Gun)</option>
-                <option value="HJ">HJ (Hijack)</option>
-                <option value="CO">CO (Cut-Off)</option>
-                <option value="BTN">BTN (Button)</option>
-                <option value="SB">SB (Small Blind)</option>
+        <div class="tabs">
+            <div class="tab active" id="tab-RFI" onclick="switchTab('RFI')">MON OPEN (RFI)</div>
+            <div class="tab" id="tab-DEFENSE" onclick="switchTab('DEFENSE')">DÉFENSE (Vs RFI)</div>
+        </div>
+
+        <div class="controls">
+            <select id="posSelect" onchange="refreshData()">
+                <option value="UTG">Ma Position : UTG</option>
+                <option value="HJ">Ma Position : HJ</option>
+                <option value="CO">Ma Position : CO</option>
+                <option value="BTN">Ma Position : BTN</option>
+                <option value="SB">Ma Position : SB</option>
+                <option value="BB">Ma Position : BB</option>
             </select>
         </div>
 
-        <div class="palette">
-            <div class="tool fold active" data-action="fold" style="background: #2a2a2a; color: #555;">FOLD</div>
-            <div class="tool open-fold" data-action="open-fold" style="background: #3498db;">O-FOLD</div>
-            <div class="tool open-call" data-action="open-call" style="background: #2ecc71;">O-CALL</div>
-            <div class="tool open-4bet" data-action="open-4bet" style="background: #e74c3c;">4BET/AI</div>
+        <div class="palette" id="palette">
+            <div class="tool fold active" data-action="fold">FOLD</div>
+            <div class="tool action-blue" id="btn-blue" data-action="action-blue">O-FOLD</div>
+            <div class="tool action-green" id="btn-green" data-action="action-green">O-CALL</div>
+            <div class="tool action-red" id="btn-red" data-action="action-red">4BET/AI</div>
         </div>
 
         <div id="pokerGrid" class="grid"></div>
-        <div id="status" class="status">Initialisation...</div>
-        <button onclick="signOut()" style="margin-top: 15px; background: none; border: 1px solid #444; color: #888; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 11px; width: 100%;">Déconnexion</button>
+        <div id="status" class="status">Connecté</div>
     </div>
 
     <script>
@@ -70,47 +78,55 @@
         const sbClient = supabase.createClient(S_URL, S_KEY);
 
         const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+        let currentTab = 'RFI';
         let currentAction = 'fold';
-        let currentPosition = 'UTG';
 
-        async function signIn() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const { error } = await sbClient.auth.signInWithPassword({ email, password });
-            if (error) alert("Accès refusé : Identifiants incorrects.");
+        const labels = {
+            'RFI': { blue: 'O-FOLD', green: 'O-CALL', red: '4BET/AI' },
+            'DEFENSE': { blue: 'FOLD', green: 'CALL', red: '3BET/AI' }
+        };
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            
+            // Mise à jour des textes des boutons
+            document.getElementById('btn-blue').innerText = labels[tab].blue;
+            document.getElementById('btn-green').innerText = labels[tab].green;
+            document.getElementById('btn-red').innerText = labels[tab].red;
+
+            refreshData();
         }
 
-        async function signOut() {
-            await sbClient.auth.signOut();
-            location.reload();
-        }
-
-        async function changePosition() {
-            currentPosition = document.getElementById('positionSelect').value;
+        async function refreshData() {
+            const pos = document.getElementById('posSelect').value;
             document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
-            await loadData();
-        }
+            
+            const { data } = await sbClient.from('ranges')
+                .select('*')
+                .eq('position', pos)
+                .eq('situation', currentTab);
 
-        async function loadData() {
-            document.getElementById('status').innerText = "Synchronisation Cloud...";
-            const { data, error } = await sbClient.from('ranges').select('*').eq('position', currentPosition);
             if (data) {
                 data.forEach(row => {
                     const cell = document.querySelector(`[data-hand="${row.hand}"]`);
                     if (cell) cell.className = 'cell ' + row.action;
                 });
-                document.getElementById('status').innerText = `Position ${currentPosition} à jour.`;
             }
         }
 
         async function updateHand(hand, action) {
             const { data: { user } } = await sbClient.auth.getUser();
+            const pos = document.getElementById('posSelect').value;
             if (!user) return;
+
             await sbClient.from('ranges').upsert({ 
-                user_id: user.id, hand: hand, action: action, position: currentPosition 
-            }, { onConflict: 'user_id,hand,position' });
+                user_id: user.id, hand: hand, action: action, position: pos, situation: currentTab 
+            }, { onConflict: 'user_id,hand,position,situation' });
         }
 
+        // Init Grille
         const grid = document.getElementById('pokerGrid');
         for (let i = 0; i < 13; i++) {
             for (let j = 0; j < 13; j++) {
@@ -127,6 +143,7 @@
             }
         }
 
+        // Palette
         document.querySelectorAll('.tool').forEach(tool => {
             tool.addEventListener('click', () => {
                 document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
@@ -135,10 +152,17 @@
             });
         });
 
+        async function signIn() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { error } = await sbClient.auth.signInWithPassword({ email, password });
+            if (error) alert("Erreur: " + error.message);
+        }
+
         sbClient.auth.onAuthStateChange((event, session) => {
             if (session) {
                 document.getElementById('login-overlay').style.display = 'none';
-                loadData();
+                refreshData();
             }
         });
     </script>
