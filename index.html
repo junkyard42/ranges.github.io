@@ -51,14 +51,27 @@
         </div>
 
         <div class="controls">
-            <select id="posSelect" onchange="refreshData()">
-                <option value="UTG">Ma Position : UTG</option>
-                <option value="HJ">Ma Position : HJ</option>
-                <option value="CO">Ma Position : CO</option>
-                <option value="BTN">Ma Position : BTN</option>
-                <option value="SB">Ma Position : SB</option>
-                <option value="BB">Ma Position : BB</option>
-            </select>
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <label style="font-size: 11px; color: #888;">MA POSITION</label>
+                <select id="posSelect" onchange="refreshData()">
+                    <option value="HJ">HJ</option>
+                    <option value="CO">CO</option>
+                    <option value="BTN">BTN</option>
+                    <option value="SB">SB</option>
+                    <option value="BB">BB</option>
+                </select>
+            </div>
+        
+            <div id="vsPosContainer" style="display: none; flex-direction: column; gap: 5px;">
+                <label style="font-size: 11px; color: #e74c3c; font-weight: bold;">VS OPEN DE :</label>
+                <select id="vsPosSelect" onchange="refreshData()">
+                    <option value="UTG">UTG</option>
+                    <option value="HJ">HJ</option>
+                    <option value="CO">CO</option>
+                    <option value="BTN">BTN</option>
+                    <option value="SB">SB</option>
+                </select>
+            </div>
         </div>
 
         <div class="palette" id="palette">
@@ -91,39 +104,55 @@
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.add('active');
             
-            // Mise à jour des textes des boutons
+            // Afficher/Masquer le sélecteur d'adversaire
+            const vsContainer = document.getElementById('vsPosContainer');
+            vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none';
+        
+            // Update labels
             document.getElementById('btn-blue').innerText = labels[tab].blue;
             document.getElementById('btn-green').innerText = labels[tab].green;
             document.getElementById('btn-red').innerText = labels[tab].red;
-
+        
             refreshData();
         }
-
+        
         async function refreshData() {
             const pos = document.getElementById('posSelect').value;
-            document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
+            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
             
+            document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
+            document.getElementById('status').innerText = "Sync...";
+        
             const { data } = await sbClient.from('ranges')
                 .select('*')
                 .eq('position', pos)
-                .eq('situation', currentTab);
-
+                .eq('situation', currentTab)
+                .eq('vs_position', vsPos);
+        
             if (data) {
                 data.forEach(row => {
                     const cell = document.querySelector(`[data-hand="${row.hand}"]`);
                     if (cell) cell.className = 'cell ' + row.action;
                 });
+                document.getElementById('status').innerText = (currentTab === 'RFI') ? `Open ${pos}` : `${pos} vs ${vsPos}`;
             }
         }
-
+        
         async function updateHand(hand, action) {
             const { data: { user } } = await sbClient.auth.getUser();
-            const pos = document.getElementById('posSelect').value;
             if (!user) return;
-
+        
+            const pos = document.getElementById('posSelect').value;
+            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
+        
             await sbClient.from('ranges').upsert({ 
-                user_id: user.id, hand: hand, action: action, position: pos, situation: currentTab 
-            }, { onConflict: 'user_id,hand,position,situation' });
+                user_id: user.id, 
+                hand: hand, 
+                action: action, 
+                position: pos, 
+                situation: currentTab,
+                vs_position: vsPos
+            }, { onConflict: 'user_id,hand,position,situation,vs_position' });
         }
 
         // Init Grille
