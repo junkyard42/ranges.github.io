@@ -66,27 +66,26 @@
                 </select>
             </div>
             
-            <div style="display: flex; flex-direction: column; gap: 5px;">
-                <label style="font-size: 11px; color: #888;">MA POSITION</label>
-                <select id="posSelect" onchange="refreshData()">
-                    <option value="HJ">HJ</option>
-                    <option value="CO">CO</option>
-                    <option value="BTN">BTN</option>
-                    <option value="SB">SB</option>
-                    <option value="BB">BB</option>
-                </select>
-            </div>
-        
-            <div id="vsPosContainer" style="display: none; flex-direction: column; gap: 5px;">
-                <label style="font-size: 11px; color: #e74c3c; font-weight: bold;">VS OPEN DE :</label>
-                <select id="vsPosSelect" onchange="refreshData()">
-                    <option value="UTG">UTG</option>
-                    <option value="HJ">HJ</option>
-                    <option value="CO">CO</option>
-                    <option value="BTN">BTN</option>
-                    <option value="SB">SB</option>
-                </select>
-            </div>
+            <select id="posSelect" onchange="refreshData()">
+                <option value="UTG">UTG</option>
+                <option value="UTG+1">UTG+1</option>
+                <option value="MP">MP</option>
+                <option value="HJ">HJ</option>
+                <option value="CO">CO</option>
+                <option value="BTN">BTN</option>
+                <option value="SB">SB</option>
+                <option value="BB">BB</option>
+            </select>
+            
+            <select id="vsPosSelect" onchange="refreshData()">
+                <option value="UTG">UTG</option>
+                <option value="UTG+1">UTG+1</option>
+                <option value="MP">MP</option>
+                <option value="HJ">HJ</option>
+                <option value="CO">CO</option>
+                <option value="BTN">BTN</option>
+                <option value="SB">SB</option>
+            </select>
 
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <button onclick="copyCurrentRange()" style="flex: 1; padding: 8px; background: #444; color: #fff; border: 1px solid #666; border-radius: 4px; font-size: 11px; cursor: pointer;">
