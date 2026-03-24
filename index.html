@@ -117,6 +117,7 @@
 
         <div id="pokerGrid" class="grid"></div>
         <div id="status" class="status">Connecté</div>
+        <button onclick="resetCurrentRange()" style="flex: 0.5; padding: 10px; background: #c0392b; border: none; color: white; border-radius: 6px; font-size: 11px;">🗑️ Reset</button>
     </div>
 
     <script>
@@ -332,6 +333,33 @@
         
             document.getElementById('statVPIP').innerText = vpip + "%";
             document.getElementById('statPFR').innerText = pfr + "%";
+        }
+
+        async function resetCurrentRange() {
+            const pos = document.getElementById('posSelect').value;
+            const stack = document.getElementById('stackSelect').value;
+            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
+        
+            if (!confirm(`Voulez-vous vraiment effacer TOUTE la range ${pos} ${stack}BB ?`)) return;
+        
+            const { data: { user } } = await sbClient.auth.getUser();
+            
+            // Suppression en base de données
+            const { error } = await sbClient.from('ranges')
+                .delete()
+                .eq('user_id', user.id)
+                .eq('position', pos)
+                .eq('situation', currentTab)
+                .eq('vs_position', vsPos)
+                .eq('stack_depth', parseInt(stack));
+        
+            if (error) {
+                alert("Erreur lors du reset : " + error.message);
+            } else {
+                document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
+                updateStats();
+                document.getElementById('status').innerText = "Range effacée.";
+            }
         }
     </script>
 </body>
