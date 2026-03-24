@@ -68,7 +68,7 @@
             
             <div style="display: flex; flex-direction: column; gap: 5px;">
                 <label style="font-size: 11px; color: #888;">MA POSITION</label>
-                <select id="posSelect" onchange="refreshData()">
+                <select id="posSelect" onchange="updateVsPosOptions(); refreshData();">
                     <option value="UTG">UTG</option>
                     <option value="UTG+1">UTG+1</option>
                     <option value="MP">MP</option>
@@ -82,7 +82,7 @@
 
             <div id="vsPosContainer" style="display: none; flex-direction: column; gap: 5px;">
                 <label style="font-size: 11px; color: #e74c3c; font-weight: bold;">VS OPEN DE :</label>
-                <select id="vsPosSelect" onchange="refreshData()">
+                <select id="vsPosSelect" onchange="refreshData();">
                     <option value="UTG">UTG</option>
                     <option value="UTG+1">UTG+1</option>
                     <option value="MP">MP</option>
@@ -196,7 +196,6 @@
         }
         
         async function refreshData() {
-            updateVsPosOptions(); //maj des positions (sélecteur attaquant)
             
             const pos = document.getElementById('posSelect').value;
             const stack = document.getElementById('stackSelect').value;
@@ -502,26 +501,30 @@
         function updateVsPosOptions() {
             const myPos = document.getElementById('posSelect').value;
             const vsSelect = document.getElementById('vsPosSelect');
+            
+            // 1. On sauvegarde la valeur qui était sélectionnée avant le refresh
+            const previousSelection = vsSelect.value;
             const myIndex = POSITION_ORDER.indexOf(myPos);
         
-            // On vide les options actuelles
-            vsSelect.innerHTML = "";
-        
-            // On n'ajoute que les positions AVANT nous dans l'ordre de la table
+            // 2. On reconstruit la liste proprement
+            let newOptionsHTML = "";
             for (let i = 0; i < myIndex; i++) {
-                const opt = document.createElement('option');
-                opt.value = POSITION_ORDER[i];
-                opt.innerText = POSITION_ORDER[i];
-                vsSelect.appendChild(opt);
+                newOptionsHTML += `<option value="${POSITION_ORDER[i]}">${POSITION_ORDER[i]}</option>`;
             }
         
-            // Si on est UTG, il n'y a personne avant. On peut soit désactiver, 
-            // soit afficher un message "N/A".
-            if (vsSelect.options.length === 0) {
-                const opt = document.createElement('option');
-                opt.value = "NONE";
-                opt.innerText = "Personne (RFI)";
-                vsSelect.appendChild(opt);
+            if (newOptionsHTML === "") {
+                newOptionsHTML = `<option value="NONE">N/A (RFI)</option>`;
+            }
+        
+            // 3. On ne met à jour le DOM que si le contenu a changé pour éviter de casser le focus
+            if (vsSelect.innerHTML !== newOptionsHTML) {
+                vsSelect.innerHTML = newOptionsHTML;
+                
+                // 4. On tente de remettre l'ancienne sélection si elle existe encore dans la nouvelle liste
+                const optionExists = Array.from(vsSelect.options).some(opt => opt.value === previousSelection);
+                if (optionExists) {
+                    vsSelect.value = previousSelection;
+                }
             }
         }
     </script>
