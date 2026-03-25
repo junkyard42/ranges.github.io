@@ -1,0 +1,3 @@
+// config.js
+const S_URL = 'https://mvncrfuuleirfainulqw.supabase.co';
+const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bmNyZnV1bGVpcmZhaW51bHF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNjY1MzQsImV4cCI6MjA4OTg0MjUzNH0.VnE7ttFDJmx5eb6oT3UBw-BvxRM_yuGT99vUocmehR0';
