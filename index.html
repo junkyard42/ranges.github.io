@@ -340,7 +340,79 @@
         function copyCurrentRange() { copiedData = Array.from(document.querySelectorAll('.cell')).filter(c => !c.classList.contains('fold')).map(c => ({ hand: c.dataset.hand, action: Array.from(c.classList).find(cls => cls.startsWith('action-')) })); document.getElementById('pasteBtn').style.display = 'block'; }
         async function pasteRange() { const { data: { user } } = await sbClient.auth.getUser(); const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY'; const upserts = copiedData.map(d => ({ user_id: user.id, hand: d.hand, action: d.action, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: vsPos, stack_depth: parseInt(document.getElementById('stackSelect').value), is_finalized: isCurrentRangeFinalized })); await sbClient.from('ranges').upsert(upserts); refreshData(); }
         function exportRange() { const activeHands = Array.from(document.querySelectorAll('.cell')).filter(c => c.classList.contains(currentAction)).map(c => c.dataset.hand); document.getElementById('ioText').value = activeHands.join(', '); }
-        async function importRange() { const textarea = document.getElementById('ioText'); const text = textarea.value; if(!text || currentAction === 'fold') { alert("Action requise"); return; } const { data: { user } } = await sbClient.auth.getUser(); const tokens = text.replace(/,/g, ' ').split(/\s+/).filter(t => t.length > 0); let handsToUpdate = new Set(); tokens.forEach(token => { let cleanToken = token.trim(); if (cleanToken.length === 3) cleanToken = cleanToken.substring(0, 2).toUpperCase() + cleanToken.substring(2).toLowerCase(); else cleanToken = cleanToken.toUpperCase(); if (cleanToken.includes('+')) { const base = cleanToken.replace('+', ''); if (base.length === 2) { const start = ranks.indexOf(base[0]); for (let i = 0; i <= start; i++) handsToUpdate.add(ranks[i] + ranks[i]); } else if (base.length === 3) { const r1 = base[0], type = base[2], limit = ranks.indexOf(base[1]), start = ranks.indexOf(r1) + 1; for (let i = start; i <= limit; i++) handsToUpdate.add(r1 + ranks[i] + type); } } else handsToUpdate.add(cleanToken); }); const upserts = Array.from(handsToUpdate).map(h => ({ user_id: user.id, hand: h, action: currentAction, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY'), stack_depth: parseInt(document.getElementById('stackSelect').value), is_finalized: isCurrentRangeFinalized })); await sbClient.from('ranges').upsert(upserts); refreshData(); }
+        async function importRange() {
+            const textarea = document.getElementById('ioText');
+            const text = textarea.value;
+            if (!text || currentAction === 'fold') {
+                alert("Sélectionnez une action (ex: ALL-IN) et collez le texte.");
+                return;
+            }
+        
+            const { data: { user } } = await sbClient.auth.getUser();
+            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
+            const pos = document.getElementById('posSelect').value;
+            const stack = parseInt(document.getElementById('stackSelect').value);
+        
+            // Nettoyage : remplace virgules et points-virgules par des espaces
+            const tokens = text.replace(/[,;]/g, ' ').split(/\s+/).filter(t => t.length > 0);
+            let handsToUpdate = new Set();
+        
+            tokens.forEach(token => {
+                let t = token.trim();
+                if (t.includes('+')) {
+                    const base = t.replace('+', '');
+                    if (base.length === 2) { // Paires : 77+
+                        const r = base[0].toUpperCase();
+                        const startIndex = ranks.indexOf(r);
+                        for (let i = 0; i <= startIndex; i++) {
+                            handsToUpdate.add(ranks[i] + ranks[i]);
+                        }
+                    } else if (base.length === 3) { // Suited/Offsuit : AJo+ ou K9s+
+                        const r1 = base[0].toUpperCase();
+                        const r2 = base[1].toUpperCase();
+                        const type = base[2].toLowerCase();
+                        
+                        const rank1Index = ranks.indexOf(r1);
+                        const rank2Index = ranks.indexOf(r2);
+                        
+                        // On part de la main la plus forte (ex: AQo) vers la main citée (ex: AJo)
+                        // L'index de la deuxième carte doit être supérieur à celui de la première (ex: A=0, J=3)
+                        for (let i = rank1Index + 1; i <= rank2Index; i++) {
+                            handsToUpdate.add(r1 + ranks[i] + type);
+                        }
+                    }
+                } else {
+                    // Main seule : "AJo" -> normalisation
+                    let hand = t;
+                    if (t.length === 3) {
+                        hand = t.substring(0, 2).toUpperCase() + t.substring(2).toLowerCase();
+                    } else {
+                        hand = t.toUpperCase();
+                    }
+                    handsToUpdate.add(hand);
+                }
+            });
+        
+            const upserts = Array.from(handsToUpdate).map(h => ({
+                user_id: user.id,
+                hand: h,
+                action: currentAction,
+                position: pos,
+                situation: currentTab,
+                vs_position: vsPos,
+                stack_depth: stack,
+                is_finalized: isCurrentRangeFinalized
+            }));
+        
+            const { error } = await sbClient.from('ranges').upsert(upserts);
+            if (error) {
+                console.error("Erreur d'import:", error);
+            } else {
+                await refreshData();
+                alert(`${upserts.length} mains importées pour l'action ${currentAction.toUpperCase()}`);
+                textarea.value = "";
+            }
+        }
         async function resetCurrentRange() { if (!confirm("Vider cette range ?")) return; const { data: { user } } = await sbClient.auth.getUser(); await sbClient.from('ranges').delete().eq('user_id', user.id).eq('position', document.getElementById('posSelect').value).eq('situation', currentTab).eq('vs_position', (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY')).eq('stack_depth', parseInt(document.getElementById('stackSelect').value)); refreshData(); }
         async function signIn() { const { error } = await sbClient.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('password').value }); if (error) alert(error.message); }
 
