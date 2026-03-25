@@ -20,6 +20,10 @@
         /* Grille de Poker */
         .grid { display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; }
         .cell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; cursor: pointer; border-radius: 2px; border: 1px solid rgba(255,255,255,0.03); transition: background 0.1s; }
+
+        /* Animation flash pour le quiz */
+        .quiz-flash-correct { background-color: #2ecc71 !important; transition: 0.3s; }
+        .quiz-flash-wrong { background-color: #e74c3c !important; transition: 0.3s; }
         
         /* --- COULEURS --- */
         .fold { background: #2a2a2a; color: #555; }
@@ -370,7 +374,30 @@
 
         function toggleQuiz() { quizActive = !quizActive; document.getElementById('quizSection').style.display = quizActive ? 'block' : 'none'; document.getElementById('pokerGrid').style.display = quizActive ? 'none' : 'grid'; if (quizActive) { score = 0; questionsDone = 0; nextQuizHand(); } }
         function nextQuizHand() { if (questionsDone >= 20) { alert(`Score : ${score} / 20`); toggleQuiz(); return; } buildPalette('quizOptions', true); const cells = Array.from(document.querySelectorAll('.cell')); const randomHand = cells[Math.floor(Math.random() * cells.length)].dataset.hand; document.getElementById('quizHand').innerText = randomHand; const cell = document.querySelector(`[data-hand="${randomHand}"]`); quizCorrectAction = Array.from(cell.classList).find(cls => cls.startsWith('action-') || cls === 'fold') || 'fold'; document.getElementById('quizCount').innerText = questionsDone + 1; document.getElementById('quizScore').innerText = score; }
-        function checkQuiz(userAction) { if (userAction === quizCorrectAction) score++; else alert(`Faux ! C'était : ${quizCorrectAction.toUpperCase()}`); questionsDone++; nextQuizHand(); }
+        function checkQuiz(userAction) {
+            if (!quizActive) return;
+        
+            // Trouver le bouton sur lequel on a cliqué
+            const buttons = document.querySelectorAll('#quizOptions .tool');
+            let clickedBtn = Array.from(buttons).find(b => b.onclick.toString().includes(userAction));
+        
+            if (userAction === quizCorrectAction) {
+                score++;
+                if (clickedBtn) clickedBtn.classList.add('quiz-flash-correct');
+            } else {
+                if (clickedBtn) clickedBtn.classList.add('quiz-flash-wrong');
+                // Optionnel : on peut aussi colorer en vert la bonne réponse pour apprendre de son erreur
+                let correctBtn = Array.from(buttons).find(b => b.onclick.toString().includes(quizCorrectAction));
+                if (correctBtn) correctBtn.classList.add('quiz-flash-correct');
+            }
+        
+            questionsDone++;
+            
+            // Petit délai pour laisser le temps de voir la couleur avant de changer de main
+            setTimeout(() => {
+                nextQuizHand();
+            }, 600); 
+        }
         function copyCurrentRange() { copiedData = Array.from(document.querySelectorAll('.cell')).filter(c => !c.classList.contains('fold')).map(c => ({ hand: c.dataset.hand, action: Array.from(c.classList).find(cls => cls.startsWith('action-')) })); document.getElementById('pasteBtn').style.display = 'block'; }
         async function pasteRange() { const { data: { user } } = await sbClient.auth.getUser(); const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY'; const upserts = copiedData.map(d => ({ user_id: user.id, hand: d.hand, action: d.action, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: vsPos, stack_depth: parseInt(document.getElementById('stackSelect').value), is_finalized: isCurrentRangeFinalized })); await sbClient.from('ranges').upsert(upserts); refreshData(); }
         function exportRange() { const activeHands = Array.from(document.querySelectorAll('.cell')).filter(c => c.classList.contains(currentAction)).map(c => c.dataset.hand); document.getElementById('ioText').value = activeHands.join(', '); }
