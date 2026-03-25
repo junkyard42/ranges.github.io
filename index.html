@@ -53,12 +53,9 @@
         .quick-presets button { flex: 0 0 auto; border: none; border-radius: 6px; font-size: 10px; cursor: pointer; padding: 8px 12px; white-space: nowrap; font-weight: bold; }
         /* Remplace ta règle actuelle par celle-ci */
         .quick-presets button.selected-preset {
-            outline: 3px solid #f1c40f !important;
-            outline-offset: -3px; /* Force la bordure à l'intérieur pour ne pas décaler les voisins */
-            box-shadow: 0 0 15px rgba(241, 196, 15, 0.8);
-            transform: scale(1.05);
-            z-index: 10;
-            position: relative;
+            box-shadow: inset 0 0 0 4px #f1c40f !important; /* Bordure dorée interne de 4px */
+            transform: scale(1.02); /* Très léger agrandissement */
+            filter: brightness(1.2); /* Rend le bouton un peu plus lumineux */
         }
         
         #login-overlay { position: fixed; inset: 0; background: #121212; display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 15px; }
@@ -438,11 +435,23 @@
         }
 
         function applyPreset(sit, myPos, vsPos, btnElement) {
-            // 1. On change les valeurs
+            // 1. Mise à jour des sélecteurs
             document.getElementById('posSelect').value = myPos;
-            updateVsPosOptions(); // Attention : cette fonction retire les classes .selected-preset
+            
+            // Cette fonction nettoie déjà les classes .selected-preset, on la laisse faire son travail
+            updateVsPosOptions(); 
             
             switchTab(sit);
+        
+            // 2. Gestion du délai pour l'affichage de la bordure et des données
+            const finalizeSelection = () => {
+                if (btnElement) {
+                    // On retire la classe de tous les boutons au cas où
+                    document.querySelectorAll('.quick-presets button').forEach(b => b.classList.remove('selected-preset'));
+                    // On l'ajoute sur le bouton actif
+                    btnElement.classList.add('selected-preset');
+                }
+            };
         
             if (vsPos !== 'ANY') {
                 setTimeout(() => { 
@@ -450,14 +459,12 @@
                     if (vsSelect) {
                         vsSelect.value = vsPos;
                         refreshData();
-                        // 2. On ré-applique la classe dorée APRES les updates
-                        if (btnElement) btnElement.classList.add('selected-preset');
+                        finalizeSelection();
                     }
                 }, 150);
             } else {
                 refreshData();
-                // 2. On ré-applique ici aussi
-                if (btnElement) btnElement.classList.add('selected-preset');
+                finalizeSelection();
             }
         }
 
