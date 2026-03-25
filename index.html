@@ -41,7 +41,7 @@
         .tool { padding: 10px 5px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; font-weight: bold; font-size: 9px; text-align: center; }
         .tool.active { border-color: white; }
         
-        .quick-presets button { border: none; border-radius: 4px; font-size: 11px; cursor: pointer; transition: opacity 0.2s; }
+        .quick-presets button { border: none; border-radius: 4px; font-size: 10px; cursor: pointer; transition: opacity 0.2s; min-height: 35px; }
         .quick-presets button:hover { opacity: 0.8; }
 
         #login-overlay { position: fixed; inset: 0; background: #121212; display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 15px; }
@@ -75,10 +75,11 @@
                 </select>
             </div>
 
-            <div class="quick-presets" style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
-                <button onclick="applyPreset('RFI', 'BTN', 'ANY')" style="flex: 1.2; padding: 10px; background: #2980b9; color: white; font-weight: bold;">🔥 RFI BTN</button>
-                <button onclick="applyPreset('DEFENSE', 'BB', 'SB_LIMP')" style="flex: 1; padding: 10px; background: #8e44ad; color: white;">🃏 BB vs SB LIMP</button>
-                <button onclick="applyPreset('DEFENSE', 'BB', 'BTN')" style="flex: 1; padding: 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d;">🎯 BB vs BTN</button>
+            <div class="quick-presets" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 15px;">
+                <button onclick="applyPreset('RFI', 'BTN', 'ANY')" style="background: #2980b9; color: white; font-weight: bold;">🔥 RFI BTN</button>
+                <button onclick="applyPreset('RFI', 'SB', 'ANY')" style="background: #d35400; color: white; font-weight: bold;">🔥 RFI SB</button>
+                <button onclick="applyPreset('DEFENSE', 'SB', 'BTN')" style="background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d;">🎯 SB vs BTN</button>
+                <button onclick="applyPreset('DEFENSE', 'BB', 'SB_LIMP')" style="background: #8e44ad; color: white;">🃏 BB vs SB LIMP</button>
             </div>
             
             <div style="display: flex; flex-direction: column; gap: 5px;">
@@ -87,7 +88,7 @@
                     <option value="UTG">UTG</option><option value="UTG+1">UTG+1</option>
                     <option value="MP">MP</option><option value="HJ">HJ</option>
                     <option value="CO">CO</option><option value="BTN">BTN</option>
-                    <option value="SB" selected>SB</option><option value="BB">BB</option>
+                    <option value="SB">SB</option><option value="BB">BB</option>
                 </select>
             </div>
 
@@ -132,13 +133,11 @@
             <div id="quizOptions" class="palette"></div>
             <button onclick="toggleQuiz()" style="margin-top: 20px; background: none; color: #bdc3c7; border: 1px solid #7f8c8d; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;">Arrêter le Quiz</button>
         </div>
-        
-        <button onclick="resetCurrentRange()" style="margin-top: 10px; width: 100%; background: none; color: #666; border: none; font-size: 10px; cursor: pointer;">🗑️ Effacer cette range</button>
     </div>
 
     <script>
-        const S_URL = 'https://mvncrfuuleirfainulqw.supabase.co';
-        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bmNyZnV1bGVpcmZhaW51bHF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNjY1MzQsImV4cCI6MjA4OTg0MjUzNH0.VnE7ttFDJmx5eb6oT3UBw-BvxRM_yuGT99vUocmehR0';
+        const S_URL = 'MON_URL';
+        const S_KEY = 'MA_CLE';
         const sbClient = supabase.createClient(S_URL, S_KEY);
 
         const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
@@ -146,10 +145,10 @@
 
         const actionsSB = [
             { id: 'fold', label: 'FOLD', class: 'fold' },
-            { id: 'action-l-fold', label: 'L-FOLD', class: 'action-l-fold' }, { id: 'action-l-call', label: 'L-CALL', class: 'action-l-call' },
-            { id: 'action-l-3bet', label: 'L-3BET', class: 'action-l-3bet' }, { id: 'action-l-ai', label: 'L-AI', class: 'action-l-ai' },
-			{ id: 'action-o-fold', label: 'O-FOLD', class: 'action-o-fold' }, { id: 'action-o-call', label: 'O-CALL', class: 'action-o-call' },
-			{ id: 'action-o-4bet', label: 'O-4BET', class: 'action-o-4bet' }, { id: 'action-o-ai', label: 'O-AI', class: 'action-o-ai' }
+            { id: 'action-l-fold', label: 'L-FOLD', class: 'action-l-fold' }, { id: 'action-o-fold', label: 'O-FOLD', class: 'action-o-fold' },
+            { id: 'action-l-call', label: 'L-CALL', class: 'action-l-call' }, { id: 'action-o-call', label: 'O-CALL', class: 'action-o-call' },
+            { id: 'action-l-3bet', label: 'L-3BET', class: 'action-l-3bet' }, { id: 'action-o-4bet', label: 'O-4BET', class: 'action-o-4bet' },
+            { id: 'action-l-ai', label: 'L-AI', class: 'action-l-ai' }, { id: 'action-o-ai', label: 'O-AI', class: 'action-o-ai' }
         ];
 
         const actionsStd = [
@@ -275,7 +274,6 @@
                 let w = c.dataset.hand.includes('s') ? 4 : (c.dataset.hand.includes('o') ? 12 : 6);
                 total += w;
                 if (!c.classList.contains('fold')) played += w;
-                // Compte comme PFR tout ce qui est Open ou 3/4-bet/AI (sauf Limp)
                 if (c.className.includes('-o-') || c.classList.contains('action-orange') || c.classList.contains('action-purple')) aggro += w;
             });
             document.getElementById('statVPIP').innerText = (played/total*100).toFixed(1) + "%";
@@ -297,9 +295,16 @@
         }
 
         function applyPreset(sit, myPos, vsPos) {
+            currentTab = sit;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + sit).classList.add('active');
+            
             document.getElementById('posSelect').value = myPos;
-            switchTab(sit);
-            document.getElementById('vsPosSelect').value = vsPos;
+            document.getElementById('vsPosContainer').style.display = (sit === 'DEFENSE') ? 'flex' : 'none';
+            
+            updateVsPosOptions();
+            if(vsPos !== 'ANY') document.getElementById('vsPosSelect').value = vsPos;
+            
             refreshData();
         }
 
