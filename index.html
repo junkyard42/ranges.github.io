@@ -274,6 +274,9 @@
         }
 
         function switchTab(tab, skipRefresh = false) {
+            // 1. On retire le contour doré dès qu'on change d'onglet
+            clearPresetStyle(); 
+            
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             const tabBtn = document.getElementById('tab-' + tab);
@@ -281,7 +284,6 @@
             
             const stackSelect = document.getElementById('stackSelect');
             
-            // On vide et on reconstruit le menu
             if (tab === 'PUSH') {
                 let pushOptions = "";
                 for(let i=15; i>=1; i--) pushOptions += `<option value="${i}">${i} BB</option>`;
@@ -292,15 +294,9 @@
                 document.getElementById('vsPosContainer').style.display = (tab === 'DEFENSE') ? 'block' : 'none';
             }
         
-            // --- CORRECTION ICI ---
-            // On ré-attache explicitement le nettoyage car le innerHTML a supprimé les liens
+            // On s'assure que le changement de stack nettoie aussi le style
             stackSelect.onchange = () => { clearPresetStyle(); refreshData(); };
             
-            const vsSelect = document.getElementById('vsPosSelect');
-            if(vsSelect) {
-                vsSelect.onchange = () => { clearPresetStyle(); refreshData(); };
-            }
-        
             updateVsPosOptions(); 
             if (!skipRefresh) refreshData();
         }
@@ -325,13 +321,19 @@
         }
 
         function applyPreset(sit, myPos, vsPos, btnElement) {
+            // On nettoie d'abord tout style existant
+            clearPresetStyle();
+            
             document.getElementById('posSelect').value = myPos;
             updateVsPosOptions(); 
-            switchTab(sit, true);
+            
+            // On passe skipRefresh à true pour éviter un double appel à refreshData
+            switchTab(sit, true); 
+        
             if (btnElement) {
-                document.querySelectorAll('#presetGroup button').forEach(b => b.classList.remove('selected-preset'));
                 btnElement.classList.add('selected-preset');
             }
+        
             setTimeout(() => {
                 if (vsPos !== 'ANY') {
                     const vsSelect = document.getElementById('vsPosSelect');
