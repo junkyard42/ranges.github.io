@@ -181,6 +181,16 @@
             }
         }
 
+        function saveCurrentState() {
+            const state = {
+                tab: currentTab,
+                pos: document.getElementById('posSelect').value,
+                stack: document.getElementById('stackSelect').value,
+                vsPos: (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY'
+            };
+            localStorage.setItem('poker_pro_state', JSON.stringify(state));
+        }
+
         function buildPalette(targetId, isQuiz = false) {
             const pos = document.getElementById('posSelect').value;
             const container = document.getElementById(targetId);
@@ -203,7 +213,6 @@
                 btn.onclick = () => isQuiz ? checkQuiz(a.id) : setAction(a.id, btn);
                 container.appendChild(btn);
             });
-            // Sécurité : si l'action courante n'est pas dans la nouvelle liste, on reset sur fold
             if (!list.find(a => a.id === currentAction)) currentAction = 'fold';
         }
 
@@ -223,6 +232,7 @@
             const vsPosSelect = document.getElementById('vsPosSelect');
             const vsPos = (currentTab === 'DEFENSE' && vsPosSelect) ? vsPosSelect.value : 'ANY';
 
+            saveCurrentState();
             document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
             
             try {
@@ -272,7 +282,9 @@
                 document.getElementById('vsPosContainer').style.display = (tab === 'DEFENSE') ? 'block' : 'none';
             }
 
-            updateVsPosOptions(); refreshData();
+            updateVsPosOptions(); 
+            saveCurrentState();
+            refreshData();
         }
 
         function updateVsPosOptions() {
@@ -300,6 +312,7 @@
                     document.querySelectorAll('#presetGroup button').forEach(b => b.classList.remove('selected-preset'));
                     btnElement.classList.add('selected-preset');
                 }
+                saveCurrentState();
             };
             if (vsPos !== 'ANY') {
                 setTimeout(() => { 
@@ -333,13 +346,13 @@
             text.style.color = isCurrentRangeFinalized ? "#2ecc71" : "#888";
         }
 
-        // Fonctions techniques conservées (Export, Quiz, Copy/Paste, Reset, SignIn)
         function toggleQuiz() { quizActive = !quizActive; document.getElementById('quizSection').style.display = quizActive ? 'block' : 'none'; document.getElementById('pokerGrid').style.display = quizActive ? 'none' : 'grid'; if (quizActive) { score = 0; questionsDone = 0; nextQuizHand(); } }
         function nextQuizHand() { if (questionsDone >= 20) { alert(`Score : ${score} / 20`); toggleQuiz(); return; } buildPalette('quizOptions', true); const cells = Array.from(document.querySelectorAll('.cell')); const randomHand = cells[Math.floor(Math.random() * cells.length)].dataset.hand; document.getElementById('quizHand').innerText = randomHand; const cell = document.querySelector(`[data-hand="${randomHand}"]`); quizCorrectAction = Array.from(cell.classList).find(cls => cls.startsWith('action-') || cls === 'fold') || 'fold'; document.getElementById('quizCount').innerText = questionsDone + 1; document.getElementById('quizScore').innerText = score; }
         function checkQuiz(userAction) { if (userAction === quizCorrectAction) score++; else alert(`Faux ! C'était : ${quizCorrectAction.toUpperCase()}`); questionsDone++; nextQuizHand(); }
         function copyCurrentRange() { copiedData = Array.from(document.querySelectorAll('.cell')).filter(c => !c.classList.contains('fold')).map(c => ({ hand: c.dataset.hand, action: Array.from(c.classList).find(cls => cls.startsWith('action-')) })); document.getElementById('pasteBtn').style.display = 'block'; }
         async function pasteRange() { const { data: { user } } = await sbClient.auth.getUser(); const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY'; const upserts = copiedData.map(d => ({ user_id: user.id, hand: d.hand, action: d.action, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: vsPos, stack_depth: parseInt(document.getElementById('stackSelect').value), is_finalized: isCurrentRangeFinalized })); await sbClient.from('ranges').upsert(upserts); refreshData(); }
         function exportRange() { const activeHands = Array.from(document.querySelectorAll('.cell')).filter(c => c.classList.contains(currentAction)).map(c => c.dataset.hand); document.getElementById('ioText').value = activeHands.join(', '); }
+        
         async function importRange() {
             const textarea = document.getElementById('ioText');
             const text = textarea.value;
@@ -352,8 +365,6 @@
             const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
             const pos = document.getElementById('posSelect').value;
             const stack = parseInt(document.getElementById('stackSelect').value);
-        
-            // Nettoyage : remplace virgules et points-virgules par des espaces
             const tokens = text.replace(/[,;]/g, ' ').split(/\s+/).filter(t => t.length > 0);
             let handsToUpdate = new Set();
         
@@ -361,28 +372,24 @@
                 let t = token.trim();
                 if (t.includes('+')) {
                     const base = t.replace('+', '');
-                    if (base.length === 2) { // Paires : 77+
+                    if (base.length === 2) { 
                         const r = base[0].toUpperCase();
                         const startIndex = ranks.indexOf(r);
                         for (let i = 0; i <= startIndex; i++) {
                             handsToUpdate.add(ranks[i] + ranks[i]);
                         }
-                    } else if (base.length === 3) { // Suited/Offsuit : AJo+ ou K9s+
+                    } else if (base.length === 3) { 
                         const r1 = base[0].toUpperCase();
                         const r2 = base[1].toUpperCase();
                         const type = base[2].toLowerCase();
-                        
                         const rank1Index = ranks.indexOf(r1);
                         const rank2Index = ranks.indexOf(r2);
-                        
-                        // On part de la main la plus forte (ex: AQo) vers la main citée (ex: AJo)
-                        // L'index de la deuxième carte doit être supérieur à celui de la première (ex: A=0, J=3)
+                        // Correction de la boucle : on part de la carte la plus haute vers la plus basse citée
                         for (let i = rank1Index + 1; i <= rank2Index; i++) {
                             handsToUpdate.add(r1 + ranks[i] + type);
                         }
                     }
                 } else {
-                    // Main seule : "AJo" -> normalisation
                     let hand = t;
                     if (t.length === 3) {
                         hand = t.substring(0, 2).toUpperCase() + t.substring(2).toLowerCase();
@@ -394,29 +401,40 @@
             });
         
             const upserts = Array.from(handsToUpdate).map(h => ({
-                user_id: user.id,
-                hand: h,
-                action: currentAction,
-                position: pos,
-                situation: currentTab,
-                vs_position: vsPos,
-                stack_depth: stack,
-                is_finalized: isCurrentRangeFinalized
+                user_id: user.id, hand: h, action: currentAction, position: pos,
+                situation: currentTab, vs_position: vsPos, stack_depth: stack, is_finalized: isCurrentRangeFinalized
             }));
         
             const { error } = await sbClient.from('ranges').upsert(upserts);
-            if (error) {
-                console.error("Erreur d'import:", error);
-            } else {
-                await refreshData();
-                alert(`${upserts.length} mains importées pour l'action ${currentAction.toUpperCase()}`);
-                textarea.value = "";
-            }
+            if (error) console.error("Erreur d'import:", error);
+            else { await refreshData(); alert(`${upserts.length} mains importées !`); textarea.value = ""; }
         }
+
         async function resetCurrentRange() { if (!confirm("Vider cette range ?")) return; const { data: { user } } = await sbClient.auth.getUser(); await sbClient.from('ranges').delete().eq('user_id', user.id).eq('position', document.getElementById('posSelect').value).eq('situation', currentTab).eq('vs_position', (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY')).eq('stack_depth', parseInt(document.getElementById('stackSelect').value)); refreshData(); }
         async function signIn() { const { error } = await sbClient.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('password').value }); if (error) alert(error.message); }
 
-        sbClient.auth.onAuthStateChange((event, session) => { if (session) { document.getElementById('login-overlay').style.display = 'none'; switchTab('RFI'); } });
+        sbClient.auth.onAuthStateChange((event, session) => { 
+            if (session) { 
+                document.getElementById('login-overlay').style.display = 'none'; 
+                const savedState = localStorage.getItem('poker_pro_state');
+                if (savedState) {
+                    const state = JSON.parse(savedState);
+                    currentTab = state.tab;
+                    switchTab(state.tab);
+                    document.getElementById('posSelect').value = state.pos;
+                    updateVsPosOptions();
+                    setTimeout(() => {
+                        document.getElementById('stackSelect').value = state.stack;
+                        if (state.tab === 'DEFENSE' && document.getElementById('vsPosSelect')) {
+                            document.getElementById('vsPosSelect').value = state.vsPos;
+                        }
+                        refreshData();
+                    }, 200);
+                } else {
+                    switchTab('RFI'); 
+                }
+            } 
+        });
     </script>
 </body>
 </html>
