@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poker Playbook Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; }
         .container { background: #1e1e1e; padding: 15px; border-radius: 12px; width: 100%; max-width: 500px; box-sizing: border-box; }
@@ -39,27 +40,9 @@
         .tool { padding: 10px 5px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; font-weight: bold; font-size: 9px; text-align: center; }
         .tool.active { border-color: white; }
         
-        /* Style des raccourcis sur une seule ligne */
-        .quick-presets { 
-            display: flex; 
-            gap: 6px; 
-            margin-bottom: 15px; 
-            overflow-x: auto; 
-            padding-bottom: 5px;
-            scrollbar-width: none; /* Cache la scrollbar sur Firefox */
-        }
-        .quick-presets::-webkit-scrollbar { display: none; } /* Cache la scrollbar sur Chrome/Safari */
-        
-        .quick-presets button { 
-            flex: 0 0 auto; 
-            border: none; 
-            border-radius: 6px; 
-            font-size: 10px; 
-            cursor: pointer; 
-            padding: 8px 12px;
-            white-space: nowrap;
-            font-weight: bold;
-        }
+        .quick-presets { display: flex; gap: 6px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .quick-presets::-webkit-scrollbar { display: none; }
+        .quick-presets button { flex: 0 0 auto; border: none; border-radius: 6px; font-size: 10px; cursor: pointer; padding: 8px 12px; white-space: nowrap; font-weight: bold; }
 
         #login-overlay { position: fixed; inset: 0; background: #121212; display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 15px; }
         input { padding: 12px; border-radius: 6px; border: 1px solid #333; width: 250px; background: #1e1e1e; color: white; }
@@ -95,6 +78,7 @@
                 <button onclick="applyPreset('RFI', 'BTN', 'ANY')" style="background: #2980b9; color: white;">🔥 RFI BTN</button>
                 <button onclick="applyPreset('RFI', 'SB', 'ANY')" style="background: #d35400; color: white;">🔥 RFI SB</button>
                 <button onclick="applyPreset('DEFENSE', 'SB', 'BTN')" style="background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d;">🎯 SB vs BTN</button>
+                <button onclick="applyPreset('DEFENSE', 'BB', 'BTN')" style="background: #16a085; color: white;">🎯 BB vs BTN</button>
                 <button onclick="applyPreset('DEFENSE', 'BB', 'SB_LIMP')" style="background: #8e44ad; color: white;">🃏 BB vs SB LIMP</button>
             </div>
             
@@ -150,9 +134,7 @@
             <button onclick="toggleQuiz()" style="margin-top: 20px; background: none; color: #bdc3c7; border: 1px solid #7f8c8d; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;">Arrêter le Quiz</button>
         </div>
     </div>
-    
-    <script src="config.js"></script>
-    
+
     <script>
         const sbClient = supabase.createClient(S_URL, S_KEY);
 
