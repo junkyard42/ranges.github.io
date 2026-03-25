@@ -40,7 +40,6 @@
         .palette.std-mode { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
         .palette.std-mode::-webkit-scrollbar { display: none; }
         .palette.std-mode .tool { flex: 1; min-width: 70px; }
-        
         .palette.sb-mode { display: grid; grid-template-columns: repeat(3, 1fr); }
 
         .tool { padding: 10px 5px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; font-weight: bold; font-size: 9px; text-align: center; }
@@ -147,12 +146,17 @@
         const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
         let currentTab = 'RFI', currentAction = 'fold', quizActive = false, score = 0, questionsDone = 0, quizCorrectAction = "";
 
+        // ORDRE SB MIS À JOUR : FOLD -> LIMP -> OPEN
         const actionsSB = [
             { id: 'fold', label: 'FOLD', class: 'fold' },
-            { id: 'action-l-fold', label: 'L-FOLD', class: 'action-l-fold' }, { id: 'action-o-fold', label: 'O-FOLD', class: 'action-o-fold' },
-            { id: 'action-l-call', label: 'L-CALL', class: 'action-l-call' }, { id: 'action-o-call', label: 'O-CALL', class: 'action-o-call' },
-            { id: 'action-l-3bet', label: 'L-3BET', class: 'action-l-3bet' }, { id: 'action-o-4bet', label: 'O-4BET', class: 'action-o-4bet' },
-            { id: 'action-l-ai', label: 'L-AI', class: 'action-l-ai' }, { id: 'action-o-ai', label: 'O-AI', class: 'action-o-ai' }
+            { id: 'action-l-fold', label: 'L-FOLD', class: 'action-l-fold' }, 
+            { id: 'action-l-call', label: 'L-CALL', class: 'action-l-call' },
+            { id: 'action-l-3bet', label: 'L-3BET', class: 'action-l-3bet' }, 
+            { id: 'action-l-ai', label: 'L-AI', class: 'action-l-ai' },
+            { id: 'action-o-fold', label: 'O-FOLD', class: 'action-o-fold' },
+            { id: 'action-o-call', label: 'O-CALL', class: 'action-o-call' }, 
+            { id: 'action-o-4bet', label: 'O-4BET', class: 'action-o-4bet' }, 
+            { id: 'action-o-ai', label: 'O-AI', class: 'action-o-ai' }
         ];
 
         const actionsStd = [
@@ -181,11 +185,8 @@
             const pos = document.getElementById('posSelect').value;
             const container = document.getElementById(targetId);
             container.innerHTML = '';
-            
             const isSBMode = (pos === 'SB' && currentTab === 'RFI');
             const list = isSBMode ? actionsSB : actionsStd;
-            
-            // Appliquer la classe CSS correspondante
             container.className = isSBMode ? 'palette sb-mode' : 'palette std-mode';
 
             list.forEach(a => {
