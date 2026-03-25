@@ -40,7 +40,15 @@
 
         /* Palette adaptative */
         .palette { margin: 15px 0; gap: 5px; }
-        .palette.std-mode { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+        .palette.std-mode { 
+            display: flex; 
+            gap: 5px; 
+            width: 100%;
+        }
+        .palette.std-mode .tool { 
+            flex: 1; /* Les outils s'étirent aussi sur toute la largeur */
+            padding: 12px 5px; 
+        }
         .palette.sb-mode { display: grid; grid-template-columns: repeat(3, 1fr); }
         .tool { padding: 10px 5px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; font-weight: bold; font-size: 9px; text-align: center; }
         .tool.active { border-color: white; }
@@ -48,9 +56,24 @@
         /* Import / Export & Quiz */
         .io-section { margin-top: 15px; padding: 10px; background: #252525; border-radius: 8px; border: 1px solid #333; }
         .io-area { width: 100%; height: 50px; background: #121212; color: #2ecc71; border: 1px solid #444; border-radius: 4px; font-family: monospace; font-size: 11px; padding: 5px; box-sizing: border-box; resize: none; margin-bottom: 8px; }
-        .quick-presets { display: flex; gap: 6px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .quick-presets { 
+            display: flex; 
+            gap: 6px; 
+            margin-bottom: 15px; 
+            width: 100%; /* Prend toute la largeur */
+        }
         .quick-presets::-webkit-scrollbar { display: none; }
-        .quick-presets button { flex: 0 0 auto; border: none; border-radius: 6px; font-size: 10px; cursor: pointer; padding: 8px 12px; white-space: nowrap; font-weight: bold; }
+        .quick-presets button { 
+            flex: 1; /* Force chaque bouton à prendre une part égale de l'espace */
+            border: none; 
+            border-radius: 6px; 
+            font-size: 10px; 
+            cursor: pointer; 
+            padding: 10px 5px; /* Un peu plus de hauteur pour le confort */
+            white-space: nowrap; 
+            font-weight: bold; 
+            transition: transform 0.1s;
+        }
         /* Remplace ta règle actuelle par celle-ci */
         .quick-presets button.selected-preset {
             box-shadow: inset 0 0 0 4px #f1c40f !important; /* Bordure dorée interne de 4px */
