@@ -69,6 +69,7 @@
             <div class="quick-presets" style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
                 <button onclick="applyPreset('RFI', 'BTN', 'ANY')" style="flex: 1.2; padding: 10px; background: #2980b9; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer;">🔥 RFI BTN</button>
                 
+                <button onclick="applyPreset('DEFENSE', 'BB', 'SB_LIMP')">🃏 BB vs SB LIMP</button>
                 <button onclick="applyPreset('DEFENSE', 'BB', 'BTN')" style="flex: 1; padding: 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d; border-radius: 4px; font-size: 11px; cursor: pointer;">🎯 BB vs BTN</button>
                 <button onclick="applyPreset('DEFENSE', 'SB', 'BTN')" style="flex: 1; padding: 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d; border-radius: 4px; font-size: 11px; cursor: pointer;">🎯 SB vs BTN</button>
                 <button onclick="applyPreset('DEFENSE', 'SB', 'CO')" style="flex: 1; padding: 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d; border-radius: 4px; font-size: 11px; cursor: pointer;">🎯 SB vs CO</button>
@@ -208,6 +209,8 @@
             const pos = document.getElementById('posSelect').value;
             const stack = document.getElementById('stackSelect').value;
             const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
+
+            updateDynamicLabels(pos, vsPos);
             
             document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
             document.getElementById('status').innerText = "Sync " + stack + "BB...";
@@ -460,6 +463,9 @@
                 finishQuiz();
                 return;
             }
+
+            // 1. Synchroniser les labels (Important pour le mode BB vs SB LIMP)
+            syncQuizLabels();
             
             const allHands = [];
             document.querySelectorAll('.cell').forEach(c => allHands.push(c.dataset.hand));
@@ -478,16 +484,23 @@
             
             if (userAction === quizCorrectAction) {
                 score++;
-                quizBox.style.background = "#1e8449"; // Succès éphémère
+                quizBox.style.background = "#1e8449"; // Vert Succès
             } else {
-                quizBox.style.background = "#922b21"; // Erreur éphémère
-                alert(`Faux ! Pour ${currentQuizHand}, l'action était : ${quizCorrectAction.replace('action-', '').toUpperCase()}`);
+                quizBox.style.background = "#922b21"; // Rouge Erreur
+                
+                // --- AMÉLIORATION DU MESSAGE D'ERREUR ---
+                // On récupère le texte du bouton correspondant à la bonne couleur
+                const colorKey = quizCorrectAction.replace('action-', ''); // ex: 'blue'
+                const correctLabel = document.getElementById(`btn-${colorKey}`).innerText;
+                
+                alert(`Faux ! Pour ${currentQuizHand}, l'action GTO était : ${correctLabel}`);
+                // ----------------------------------------
             }
         
             questionsDone++;
             
             setTimeout(() => {
-                quizBox.style.background = "#2c3e50";
+                quizBox.style.background = "#2c3e50"; // Retour couleur sombre
                 nextQuizHand();
             }, 200);
         }
@@ -517,7 +530,12 @@
             // 2. On reconstruit la liste proprement
             let newOptionsHTML = "";
             for (let i = 0; i < myIndex; i++) {
+                if (POSITION_ORDER[i] === "SB") {
+                newOptionsHTML += `<option value="SB">SB (vs Open)</option>`;
+                newOptionsHTML += `<option value="SB_LIMP">SB (vs Limp)</option>`;
+            } else {
                 newOptionsHTML += `<option value="${POSITION_ORDER[i]}">${POSITION_ORDER[i]}</option>`;
+            }
             }
         
             if (newOptionsHTML === "") {
@@ -559,6 +577,47 @@
             
             // Petit feedback visuel
             console.log(`Preset appliqué : ${myPos} vs ${vsPos} (${situation})`);
+        }
+
+        // Définis la fonction de mise à jour des labels
+        function updateDynamicLabels(pos, vsPos) {
+            const btnBlue = document.getElementById('btn-blue');
+            const btnGreen = document.getElementById('btn-green');
+            const btnOrange = document.getElementById('btn-orange');
+            const btnPurple = document.getElementById('btn-purple');
+        
+            // Cas spécifique : BB contre un Limp de la SB
+            if (currentTab === 'DEFENSE' && pos === 'BB' && vsPos === 'SB_LIMP') {
+                btnBlue.innerText = "CHECK";        // On ne fold jamais en BB vs Limp
+                btnGreen.innerText = "ISO 3x";      // Relance standard
+                btnOrange.innerText = "ISO 4x/5x";  // Relance forte/Polarisée
+                btnPurple.innerText = "ISO AI";     // All-in direct
+            } else {
+                // Retour aux labels par défaut définis dans ton objet 'labels'
+                btnBlue.innerText = labels[currentTab].blue;
+                btnGreen.innerText = labels[currentTab].green;
+                btnOrange.innerText = labels[currentTab].orange;
+                btnPurple.innerText = labels[currentTab].purple;
+            }
+        }
+        //synchronisation des labels pour le quiz
+        function syncQuizLabels() {
+            // On récupère les textes actuels des boutons de la palette (qui sont déjà mis à jour par updateDynamicLabels)
+            const labelBlue = document.getElementById('btn-blue').innerText;
+            const labelGreen = document.getElementById('btn-green').innerText;
+            const labelOrange = document.getElementById('btn-orange').innerText;
+            const labelPurple = document.getElementById('btn-purple').innerText;
+        
+            // On les applique aux boutons du Quiz
+            const qBlue = document.getElementById('q-blue');
+            const qGreen = document.getElementById('q-green');
+            const qOrange = document.getElementById('q-orange');
+            const qPurple = document.getElementById('q-purple');
+        
+            if (qBlue) qBlue.innerText = labelBlue;
+            if (qGreen) qGreen.innerText = labelGreen;
+            if (qOrange) qOrange.innerText = labelOrange;
+            if (qPurple) qPurple.innerText = labelPurple;
         }
     </script>
 </body>
