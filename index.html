@@ -72,7 +72,7 @@
         <div class="controls">
             <div style="display: flex; flex-direction: column; gap: 5px;">
                 <label style="font-size: 11px; color: #f39c12; font-weight: bold;">TAILLE DU STACK</label>
-                <select id="stackSelect" onchange="refreshData()"></select>
+                <select id="stackSelect" onchange="clearPresetStyle(); refreshData()"></select>
             </div>
 
             <div class="quick-presets" id="presetGroup">
@@ -82,7 +82,7 @@
                 <button onclick="applyPreset('PUSH', 'SB', 'ANY', this)" style="background: #c0392b; color: white;">⚡ PUSH SB</button>
             </div>
             
-            <select id="posSelect" onchange="updateVsPosOptions(); refreshData();">
+            <select id="posSelect" onchange="clearPresetStyle(); updateVsPosOptions(); refreshData();">
                 <option value="UTG">UTG</option><option value="UTG+1">UTG+1</option>
                 <option value="MP">MP</option><option value="HJ">HJ</option>
                 <option value="CO">CO</option><option value="BTN">BTN</option>
@@ -302,6 +302,13 @@
                 else html += `<option value="${POSITION_ORDER[i]}">${POSITION_ORDER[i]}</option>`;
             }
             document.getElementById('vsPosSelect').innerHTML = html || `<option value="ANY">ANY</option>`;
+        }
+
+        // Fonction pour retirer le contour doré des presets
+        function clearPresetStyle() {
+            document.querySelectorAll('#presetGroup button').forEach(b => {
+                b.classList.remove('selected-preset');
+            });
         }
 
         function applyPreset(sit, myPos, vsPos, btnElement) {
