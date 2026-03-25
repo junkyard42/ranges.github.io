@@ -224,6 +224,8 @@
                 const btn = document.createElement('div');
                 btn.className = `tool ${a.class} ${!isQuiz && currentAction === a.id ? 'active' : ''}`;
                 btn.innerText = a.label;
+                // ON AJOUTE CETTE LIGNE pour gérer l'indicateur visuel
+                btn.dataset.action = a.id;
                 btn.onclick = () => isQuiz ? checkQuiz(a.id) : setAction(a.id, btn);
                 container.appendChild(btn);
             });
@@ -377,24 +379,26 @@
         function checkQuiz(userAction) {
             if (!quizActive) return;
         
-            // Trouver le bouton sur lequel on a cliqué
             const buttons = document.querySelectorAll('#quizOptions .tool');
-            let clickedBtn = Array.from(buttons).find(b => b.onclick.toString().includes(userAction));
+            // Recherche par data-action au lieu de transformer la fonction en string
+            let clickedBtn = Array.from(buttons).find(b => b.dataset.action === userAction);
+            let correctBtn = Array.from(buttons).find(b => b.dataset.action === quizCorrectAction);
         
             if (userAction === quizCorrectAction) {
                 score++;
                 if (clickedBtn) clickedBtn.classList.add('quiz-flash-correct');
             } else {
                 if (clickedBtn) clickedBtn.classList.add('quiz-flash-wrong');
-                // Optionnel : on peut aussi colorer en vert la bonne réponse pour apprendre de son erreur
-                let correctBtn = Array.from(buttons).find(b => b.onclick.toString().includes(quizCorrectAction));
                 if (correctBtn) correctBtn.classList.add('quiz-flash-correct');
             }
         
             questionsDone++;
             
-            // Petit délai pour laisser le temps de voir la couleur avant de changer de main
+            // On bloque les clics pendant l'animation pour éviter de sauter des questions
+            document.getElementById('quizOptions').style.pointerEvents = 'none';
+
             setTimeout(() => {
+                document.getElementById('quizOptions').style.pointerEvents = 'auto';
                 nextQuizHand();
             }, 600); 
         }
