@@ -375,7 +375,54 @@
         }
 
         function toggleQuiz() { quizActive = !quizActive; document.getElementById('quizSection').style.display = quizActive ? 'block' : 'none'; document.getElementById('pokerGrid').style.display = quizActive ? 'none' : 'grid'; if (quizActive) { score = 0; questionsDone = 0; nextQuizHand(); } }
-        function nextQuizHand() { if (questionsDone >= 20) { alert(`Score : ${score} / 20`); toggleQuiz(); return; } buildPalette('quizOptions', true); const cells = Array.from(document.querySelectorAll('.cell')); const randomHand = cells[Math.floor(Math.random() * cells.length)].dataset.hand; document.getElementById('quizHand').innerText = randomHand; const cell = document.querySelector(`[data-hand="${randomHand}"]`); quizCorrectAction = Array.from(cell.classList).find(cls => cls.startsWith('action-') || cls === 'fold') || 'fold'; document.getElementById('quizCount').innerText = questionsDone + 1; document.getElementById('quizScore').innerText = score; }
+        function nextQuizHand() {
+            if (questionsDone >= 20) { 
+                alert(`Quiz terminé ! Score : ${score} / 20`); 
+                toggleQuiz(); 
+                return; 
+            }
+        
+            buildPalette('quizOptions', true);
+            const allCells = Array.from(document.querySelectorAll('.cell'));
+            
+            // 1. Identifier les "mains frontières" (celles qui touchent une main d'une autre couleur)
+            const boundaryHands = allCells.filter((cell, index) => {
+                const row = Math.floor(index / 13);
+                const col = index % 13;
+                const currentAction = cell.className;
+        
+                // On regarde les voisins directs (haut, bas, gauche, droite)
+                const neighbors = [
+                    index - 1,  index + 1,          // Gauche, Droite
+                    index - 13, index + 13          // Haut, Bas
+                ];
+        
+                return neighbors.some(nIndex => {
+                    if (nIndex >= 0 && nIndex < 169) {
+                        // Si un voisin a une classe CSS différente, c'est une frontière !
+                        return allCells[nIndex].className !== currentAction;
+                    }
+                    return false;
+                });
+            });
+        
+            // 2. Sélection : 80% de chances de piocher une frontière, 20% de pur hasard
+            let selectedCell;
+            if (boundaryHands.length > 0 && Math.random() < 0.8) {
+                selectedCell = boundaryHands[Math.floor(Math.random() * boundaryHands.length)];
+            } else {
+                selectedCell = allCells[Math.floor(Math.random() * allCells.length)];
+            }
+        
+            const randomHand = selectedCell.dataset.hand;
+            document.getElementById('quizHand').innerText = randomHand;
+            
+            // Déterminer la bonne réponse
+            quizCorrectAction = Array.from(selectedCell.classList).find(cls => cls.startsWith('action-') || cls === 'fold') || 'fold';
+            
+            document.getElementById('quizCount').innerText = questionsDone + 1;
+            document.getElementById('quizScore').innerText = score;
+        }
         function checkQuiz(userAction) {
             if (!quizActive) return;
         
