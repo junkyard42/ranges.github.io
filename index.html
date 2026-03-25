@@ -12,7 +12,7 @@
         
         /* Onglets et Contrôles */
         .tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #2a2a2a; padding: 5px; border-radius: 8px; }
-        .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 6px; font-weight: bold; font-size: 13px; color: #888; }
+        .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 6px; font-weight: bold; font-size: 11px; color: #888; transition: 0.2s; }
         .tab.active { background: #3498db; color: white; }
         .controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
         select { width: 100%; padding: 10px; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 6px; font-size: 13px; }
@@ -27,12 +27,10 @@
         .action-green { background: #2ecc71; color: white; }
         .action-orange { background: #f39c12; color: white; }
         .action-purple { background: #9b59b6; color: white; }
-        /* Série L (Pastels) */
         .action-l-fold { background: #5d6d7e; color: #ebf5fb; }
         .action-l-call { background: #48c9b0; color: #145a32; }
         .action-l-3bet { background: #edbb99; color: #6e2c00; }
         .action-l-ai { background: #f1948a; color: #641e16; }
-        /* Série O (Vifs) */
         .action-o-fold { background: #2e86de; color: white; }
         .action-o-call { background: #28b463; color: white; }
         .action-o-4bet { background: #d35400; color: white; }
@@ -40,15 +38,8 @@
 
         /* Palette adaptative */
         .palette { margin: 15px 0; gap: 5px; }
-        .palette.std-mode { 
-            display: flex; 
-            gap: 5px; 
-            width: 100%;
-        }
-        .palette.std-mode .tool { 
-            flex: 1; /* Les outils s'étirent aussi sur toute la largeur */
-            padding: 12px 5px; 
-        }
+        .palette.std-mode { display: flex; gap: 5px; width: 100%; }
+        .palette.std-mode .tool { flex: 1; padding: 12px 5px; }
         .palette.sb-mode { display: grid; grid-template-columns: repeat(3, 1fr); }
         .tool { padding: 10px 5px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; font-weight: bold; font-size: 9px; text-align: center; }
         .tool.active { border-color: white; }
@@ -56,30 +47,9 @@
         /* Import / Export & Quiz */
         .io-section { margin-top: 15px; padding: 10px; background: #252525; border-radius: 8px; border: 1px solid #333; }
         .io-area { width: 100%; height: 50px; background: #121212; color: #2ecc71; border: 1px solid #444; border-radius: 4px; font-family: monospace; font-size: 11px; padding: 5px; box-sizing: border-box; resize: none; margin-bottom: 8px; }
-        .quick-presets { 
-            display: flex; 
-            gap: 6px; 
-            margin-bottom: 15px; 
-            width: 100%; /* Prend toute la largeur */
-        }
-        .quick-presets::-webkit-scrollbar { display: none; }
-        .quick-presets button { 
-            flex: 1; /* Force chaque bouton à prendre une part égale de l'espace */
-            border: none; 
-            border-radius: 6px; 
-            font-size: 10px; 
-            cursor: pointer; 
-            padding: 10px 5px; /* Un peu plus de hauteur pour le confort */
-            white-space: nowrap; 
-            font-weight: bold; 
-            transition: transform 0.1s;
-        }
-        /* Remplace ta règle actuelle par celle-ci */
-        .quick-presets button.selected-preset {
-            box-shadow: inset 0 0 0 4px #f1c40f !important; /* Bordure dorée interne de 4px */
-            transform: scale(1.02); /* Très léger agrandissement */
-            filter: brightness(1.2); /* Rend le bouton un peu plus lumineux */
-        }
+        .quick-presets { display: flex; gap: 6px; margin-bottom: 15px; width: 100%; }
+        .quick-presets button { flex: 1; border: none; border-radius: 6px; font-size: 10px; cursor: pointer; padding: 10px 5px; white-space: nowrap; font-weight: bold; transition: transform 0.1s; }
+        .quick-presets button.selected-preset { box-shadow: inset 0 0 0 4px #f1c40f !important; transform: scale(1.02); filter: brightness(1.2); }
         
         #login-overlay { position: fixed; inset: 0; background: #121212; display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 15px; }
         input { padding: 12px; border-radius: 6px; border: 1px solid #333; width: 250px; background: #1e1e1e; color: white; }
@@ -96,27 +66,22 @@
 
     <div class="container">
         <div class="tabs">
-            <div class="tab active" id="tab-RFI" onclick="switchTab('RFI')">MON OPEN (RFI)</div>
-            <div class="tab" id="tab-DEFENSE" onclick="switchTab('DEFENSE')">DÉFENSE (Vs RFI)</div>
+            <div class="tab active" id="tab-RFI" onclick="switchTab('RFI')">OPEN (RFI)</div>
+            <div class="tab" id="tab-DEFENSE" onclick="switchTab('DEFENSE')">DEFENSE</div>
+            <div class="tab" id="tab-PUSH" onclick="switchTab('PUSH')">PUSH OR FOLD</div>
         </div>
 
         <div class="controls">
             <div style="display: flex; flex-direction: column; gap: 5px;">
                 <label style="font-size: 11px; color: #f39c12; font-weight: bold;">TAILLE DU STACK</label>
-                <select id="stackSelect" onchange="refreshData()">
-                    <option value="100">100 BB</option><option value="80">80 BB</option>
-                    <option value="60">60 BB</option><option value="40">40 BB</option>
-                    <option value="30">30 BB</option><option value="20">20 BB</option>
-                    <option value="14">14 BB</option><option value="10">10 BB</option>
-                </select>
+                <select id="stackSelect" onchange="refreshData()"></select>
             </div>
 
             <div class="quick-presets" id="presetGroup">
                 <button onclick="applyPreset('RFI', 'BTN', 'ANY', this)" style="background: #2e86de; color: white;">🔥 RFI BTN</button>
                 <button onclick="applyPreset('RFI', 'SB', 'ANY', this)" style="background: #d35400; color: white;">🔥 RFI SB</button>
-                <button onclick="applyPreset('DEFENSE', 'SB', 'BTN', this)" style="background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d;">🎯 SB vs BTN</button>
                 <button onclick="applyPreset('DEFENSE', 'BB', 'BTN', this)" style="background: #28b463; color: white;">🎯 BB vs BTN</button>
-                <button onclick="applyPreset('DEFENSE', 'BB', 'SB_LIMP', this)" style="background: #8e44ad; color: white;">🃏 BB vs LIMP SB</button>
+                <button onclick="applyPreset('PUSH', 'SB', 'ANY', this)" style="background: #c0392b; color: white;">⚡ PUSH SB</button>
             </div>
             
             <select id="posSelect" onchange="updateVsPosOptions(); refreshData();">
@@ -142,7 +107,7 @@
                 <span id="statVPIP" style="display: block; font-size: 18px; font-weight: bold;">0.0%</span>
             </div>
             <div style="flex: 1; background: #2a2a2a; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid #e74c3c;">
-                <span style="font-size: 10px; color: #888;">PFR</span>
+                <span style="font-size: 10px; color: #888;">PFR / SHV</span>
                 <span id="statPFR" style="display: block; font-size: 18px; font-weight: bold;">0.0%</span>
             </div>
             <div id="btnFinalize" onclick="toggleFinalize()" style="cursor: pointer; background: #2a2a2a; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid #555; transition: 0.3s;">
@@ -154,7 +119,7 @@
         <div id="pokerGrid" class="grid"></div>
 
         <div class="io-section">
-            <textarea id="ioText" class="io-area" placeholder="Import/Export Format : AA, 22+, AJs+"></textarea>
+            <textarea id="ioText" class="io-area" placeholder="Format : AA, 22+, AJs+"></textarea>
             <div style="display: flex; gap: 5px;">
                 <button onclick="exportRange()" style="flex: 1; background: #444; color: white; padding: 8px; font-size: 10px; border-radius: 4px; border:none; cursor:pointer;">📤 EXPORTER</button>
                 <button onclick="importRange()" style="flex: 1; background: #27ae60; color: white; padding: 8px; font-size: 10px; border-radius: 4px; border:none; cursor:pointer;">📥 IMPORTER</button>
@@ -179,7 +144,7 @@
     <script>
         const sbClient = supabase.createClient(S_URL, S_KEY);
         const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
-        let currentTab = 'RFI', currentAction = 'fold', quizActive = false, score = 0, questionsDone = 0, quizCorrectAction = "", copiedData = null;
+        let currentTab = 'RFI', currentAction = 'fold', quizActive = false, score = 0, questionsDone = 0, quizCorrectAction = "", copiedData = null, isCurrentRangeFinalized = false;
 
         const actionsSB = [
             { id: 'fold', label: 'FOLD', class: 'fold' },
@@ -195,6 +160,11 @@
             { id: 'action-orange', label: '3/4-BET', class: 'action-orange' }, { id: 'action-purple', label: 'ALL-IN', class: 'action-purple' }
         ];
 
+        const actionsPush = [
+            { id: 'fold', label: 'FOLD', class: 'fold' },
+            { id: 'action-o-ai', label: 'ALL-IN', class: 'action-o-ai' }
+        ];
+
         const grid = document.getElementById('pokerGrid');
         for (let i = 0; i < 13; i++) {
             for (let j = 0; j < 13; j++) {
@@ -202,7 +172,7 @@
                 const cell = document.createElement('div');
                 cell.className = 'cell fold'; cell.textContent = hand; cell.dataset.hand = hand;
                 cell.onclick = () => { 
-                    if(quizActive || isCurrentRangeFinalized) return; // Bloqué si finalisé
+                    if(quizActive || isCurrentRangeFinalized) return;
                     cell.className = 'cell ' + currentAction; 
                     updateHand(hand, currentAction); 
                     updateStats(); 
@@ -215,9 +185,16 @@
             const pos = document.getElementById('posSelect').value;
             const container = document.getElementById(targetId);
             container.innerHTML = '';
-            const isSBMode = (pos === 'SB' && currentTab === 'RFI');
-            const list = isSBMode ? actionsSB : actionsStd;
-            container.className = isSBMode ? 'palette sb-mode' : 'palette std-mode';
+            
+            let list;
+            if (currentTab === 'PUSH') {
+                list = actionsPush;
+                container.className = 'palette std-mode';
+            } else {
+                const isSBMode = (pos === 'SB' && currentTab === 'RFI');
+                list = isSBMode ? actionsSB : actionsStd;
+                container.className = isSBMode ? 'palette sb-mode' : 'palette std-mode';
+            }
 
             list.forEach(a => {
                 const btn = document.createElement('div');
@@ -226,6 +203,8 @@
                 btn.onclick = () => isQuiz ? checkQuiz(a.id) : setAction(a.id, btn);
                 container.appendChild(btn);
             });
+            // Sécurité : si l'action courante n'est pas dans la nouvelle liste, on reset sur fold
+            if (!list.find(a => a.id === currentAction)) currentAction = 'fold';
         }
 
         function setAction(id, btn) {
@@ -235,86 +214,34 @@
         }
 
         async function refreshData() {
-            // 1. On sécurise l'interface
             const statusEl = document.getElementById('status');
             if (statusEl) statusEl.innerText = "Sync...";
-            
-            // 2. On vérifie la palette
             buildPalette('palette');
-        
-            // 3. Récupération des filtres
+            
             const pos = document.getElementById('posSelect').value;
             const stack = document.getElementById('stackSelect').value;
             const vsPosSelect = document.getElementById('vsPosSelect');
             const vsPos = (currentTab === 'DEFENSE' && vsPosSelect) ? vsPosSelect.value : 'ANY';
-        
-            // 4. Reset visuel de la grille
+
             document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
-            //on enlève la bordure dorée des boutons si on passe par le menu
-            document.querySelectorAll('#presetGroup button').forEach(btn => btn.classList.remove('selected-preset'));
-        
+            
             try {
                 const { data: { user } } = await sbClient.auth.getUser();
-                if (!user) {
-                    if (statusEl) statusEl.innerText = "Non connecté";
-                    return;
-                }
-        
-                // --- NOUVEAU : Récupérer le statut de finalisation ---
-                const { data: statusData } = await sbClient
-                    .from('ranges')
-                    .select('is_finalized')
-                    .eq('user_id', user.id)
-                    .eq('position', pos)
-                    .eq('situation', currentTab)
-                    .eq('vs_position', vsPos)
-                    .eq('stack_depth', parseInt(stack))
-                    .limit(1); // On vérifie juste une ligne
-        
-                // Si au moins une main de cette range est finalisée, on considère la range finalisée
+                if (!user) return;
+
+                const { data: statusData } = await sbClient.from('ranges').select('is_finalized').eq('user_id', user.id).eq('position', pos).eq('situation', currentTab).eq('vs_position', vsPos).eq('stack_depth', parseInt(stack)).limit(1);
                 isCurrentRangeFinalized = (statusData && statusData.length > 0) ? statusData[0].is_finalized : false;
                 updateFinalizeUI(); 
-                // ---------------------------------------------------
-        
-                const { data, error } = await sbClient
-                    .from('ranges')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .eq('position', pos)
-                    .eq('situation', currentTab)
-                    .eq('vs_position', vsPos)
-                    .eq('stack_depth', parseInt(stack));
-        
-                if (error) throw error;
-        
-                if (data) {
-                    data.forEach(row => {
-                        const cell = document.querySelector(`[data-hand="${row.hand}"]`);
-                        if (cell) cell.className = 'cell ' + row.action;
-                    });
-                }
-                
+
+                const { data, error } = await sbClient.from('ranges').select('*').eq('user_id', user.id).eq('position', pos).eq('situation', currentTab).eq('vs_position', vsPos).eq('stack_depth', parseInt(stack));
+                if (data) data.forEach(row => {
+                    const cell = document.querySelector(`[data-hand="${row.hand}"]`);
+                    if (cell) cell.className = 'cell ' + row.action;
+                });
                 updateStats();
                 if (statusEl) statusEl.innerText = "Connecté - " + pos;
-        
-            } catch (err) {
-                console.error("Erreur de synchro:", err);
-                if (statusEl) statusEl.innerText = "Erreur de connexion";
-            }
+            } catch (err) { console.error(err); }
         }
-        
-        // Correction du listener de connexion pour éviter la boucle infinie
-        sbClient.auth.onAuthStateChange((event, session) => {
-            const loginOverlay = document.getElementById('login-overlay');
-            if (session) {
-                if (loginOverlay) loginOverlay.style.display = 'none';
-                updateVsPosOptions();
-                // Petit délai pour laisser le DOM se mettre à jour
-                setTimeout(refreshData, 100);
-            } else {
-                if (loginOverlay) loginOverlay.style.display = 'flex';
-            }
-        });
 
         function updateStats() {
             let total = 0, played = 0, aggro = 0;
@@ -322,119 +249,29 @@
                 let w = c.dataset.hand.includes('s') ? 4 : (c.dataset.hand.includes('o') ? 12 : 6);
                 total += w;
                 if (!c.classList.contains('fold')) played += w;
-                if (c.className.includes('-o-') || c.classList.contains('action-orange') || c.classList.contains('action-purple')) aggro += w;
+                if (c.className.includes('-o-ai') || c.className.includes('action-purple') || c.className.includes('action-orange')) aggro += w;
             });
             document.getElementById('statVPIP').innerText = (played/total*100).toFixed(1) + "%";
             document.getElementById('statPFR').innerText = (aggro/total*100).toFixed(1) + "%";
         }
 
-        // --- QUIZ ---
-        function toggleQuiz() {
-            quizActive = !quizActive;
-            document.getElementById('quizSection').style.display = quizActive ? 'block' : 'none';
-            document.getElementById('pokerGrid').style.display = quizActive ? 'none' : 'grid';
-            if (quizActive) { score = 0; questionsDone = 0; nextQuizHand(); }
-        }
-        function nextQuizHand() {
-            if (questionsDone >= 20) { alert(`Score : ${score} / 20`); toggleQuiz(); return; }
-            buildPalette('quizOptions', true);
-            const cells = Array.from(document.querySelectorAll('.cell'));
-            const randomHand = cells[Math.floor(Math.random() * cells.length)].dataset.hand;
-            document.getElementById('quizHand').innerText = randomHand;
-            const cell = document.querySelector(`[data-hand="${randomHand}"]`);
-            quizCorrectAction = Array.from(cell.classList).find(cls => cls.startsWith('action-') || cls === 'fold') || 'fold';
-            document.getElementById('quizCount').innerText = questionsDone + 1;
-            document.getElementById('quizScore').innerText = score;
-        }
-        function checkQuiz(userAction) {
-            if (userAction === quizCorrectAction) score++;
-            else alert(`Faux ! C'était : ${quizCorrectAction.toUpperCase()}`);
-            questionsDone++; nextQuizHand();
-        }
-
-        // --- EXPORT/IMPORT ---
-        function exportRange() {
-            const activeHands = Array.from(document.querySelectorAll('.cell')).filter(c => c.classList.contains(currentAction)).map(c => c.dataset.hand);
-            document.getElementById('ioText').value = activeHands.join(', ');
-        }
-        async function importRange() {
-            const textarea = document.getElementById('ioText');
-            const text = textarea.value;
-            if(!text || currentAction === 'fold') {
-                alert("Collez du texte et sélectionnez une action (ex: O-CALL)");
-                return;
-            }
-        
-            const { data: { user } } = await sbClient.auth.getUser();
-            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
-            const pos = document.getElementById('posSelect').value;
-            const stack = parseInt(document.getElementById('stackSelect').value);
-            
-            // Nettoyage radical : on remplace les virgules par des espaces, puis on découpe
-            const tokens = text.replace(/,/g, ' ').split(/\s+/).filter(t => t.length > 0);
-            let handsToUpdate = new Set();
-        
-            tokens.forEach(token => {
-                // On nettoie chaque token individuellement (Espaces et Casse)
-                let cleanToken = token.trim();
-                // Normalisation : "AKO" -> "AKo", "AKS" -> "AKs", "TT" -> "TT"
-                if (cleanToken.length === 3) {
-                    cleanToken = cleanToken.substring(0, 2).toUpperCase() + cleanToken.substring(2).toLowerCase();
-                } else {
-                    cleanToken = cleanToken.toUpperCase();
-                }
-        
-                if (cleanToken.includes('+')) {
-                    const base = cleanToken.replace('+', '');
-                    if (base.length === 2) { // Pairs: TT+
-                        const startIndex = ranks.indexOf(base[0]);
-                        // On remonte de la paire de base jusqu'à AA
-                        for (let i = 0; i <= startIndex; i++) {
-                            handsToUpdate.add(ranks[i] + ranks[i]);
-                        }
-                    } else if (base.length === 3) { // Suited/Offsuit: AJs+
-                        const r1 = base[0], r2 = base[1], type = base[2];
-                        const limitIndex = ranks.indexOf(r2);
-                        const startIndex = ranks.indexOf(r1) + 1;
-                        // De la main la plus haute (ex: AQs) vers la plus basse du token (ex: AJs)
-                        for (let i = startIndex; i <= limitIndex; i++) {
-                            handsToUpdate.add(r1 + ranks[i] + type);
-                        }
-                    }
-                } else {
-                    handsToUpdate.add(cleanToken);
-                }
-            });
-        
-            const upserts = Array.from(handsToUpdate).map(h => ({ 
-                user_id: user.id, hand: h, action: currentAction, 
-                position: pos, situation: currentTab, 
-                vs_position: vsPos, stack_depth: stack 
-            }));
-        
-            const { error } = await sbClient.from('ranges').upsert(upserts);
-        
-            if (error) {
-                console.error("Erreur:", error);
-            } else {
-                await refreshData(); // On attend la fin du rafraîchissement
-                alert(`${upserts.length} mains affichées sur la grille !`);
-                textarea.value = ""; // Optionnel : vide le champ après succès
-            }
-        }
-
-        // --- SYNC ---
-        async function updateHand(hand, action) {
-            const { data: { user } } = await sbClient.auth.getUser();
-            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
-            await sbClient.from('ranges').upsert({ user_id: user.id, hand, action, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: vsPos, stack_depth: parseInt(document.getElementById('stackSelect').value) });
-        }
-
         function switchTab(tab) {
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
-            document.getElementById('vsPosContainer').style.display = (tab === 'DEFENSE') ? 'block' : 'none';
+            const tabBtn = document.getElementById('tab-' + tab);
+            if(tabBtn) tabBtn.classList.add('active');
+
+            const stackSelect = document.getElementById('stackSelect');
+            if (tab === 'PUSH') {
+                let pushOptions = "";
+                for(let i=15; i>=1; i--) pushOptions += `<option value="${i}">${i} BB</option>`;
+                stackSelect.innerHTML = pushOptions;
+                document.getElementById('vsPosContainer').style.display = 'none';
+            } else {
+                stackSelect.innerHTML = `<option value="100">100 BB</option><option value="80">80 BB</option><option value="60">60 BB</option><option value="40">40 BB</option><option value="30">30 BB</option><option value="20">20 BB</option><option value="14">14 BB</option><option value="10">10 BB</option>`;
+                document.getElementById('vsPosContainer').style.display = (tab === 'DEFENSE') ? 'block' : 'none';
+            }
+
             updateVsPosOptions(); refreshData();
         }
 
@@ -442,10 +279,7 @@
             const POSITION_ORDER = ["UTG", "UTG+1", "MP", "HJ", "CO", "BTN", "SB", "BB"];
             const myIndex = POSITION_ORDER.indexOf(document.getElementById('posSelect').value);
             let html = "";
-            
-            // On ne retire la classe QUE si l'appel ne vient pas d'un applyPreset
-            // Mais pour l'instant, assure-toi juste que cette ligne est là :
-            document.querySelectorAll('.quick-presets button').forEach(btn => btn.classList.remove('selected-preset'));
+            document.querySelectorAll('#presetGroup button').forEach(btn => btn.classList.remove('selected-preset'));
             
             for (let i = 0; i < myIndex; i++) {
                 if (POSITION_ORDER[i] === "SB") {
@@ -458,111 +292,59 @@
         }
 
         function applyPreset(sit, myPos, vsPos, btnElement) {
-            // 1. Mise à jour des sélecteurs
             document.getElementById('posSelect').value = myPos;
-            
-            // Cette fonction nettoie déjà les classes .selected-preset, on la laisse faire son travail
             updateVsPosOptions(); 
-            
             switchTab(sit);
-        
-            // 2. Gestion du délai pour l'affichage de la bordure et des données
             const finalizeSelection = () => {
                 if (btnElement) {
-                    // On retire la classe de tous les boutons au cas où
-                    document.querySelectorAll('.quick-presets button').forEach(b => b.classList.remove('selected-preset'));
-                    // On l'ajoute sur le bouton actif
+                    document.querySelectorAll('#presetGroup button').forEach(b => b.classList.remove('selected-preset'));
                     btnElement.classList.add('selected-preset');
                 }
             };
-        
             if (vsPos !== 'ANY') {
                 setTimeout(() => { 
                     const vsSelect = document.getElementById('vsPosSelect');
-                    if (vsSelect) {
-                        vsSelect.value = vsPos;
-                        refreshData();
-                        finalizeSelection();
-                    }
+                    if (vsSelect) { vsSelect.value = vsPos; refreshData(); finalizeSelection(); }
                 }, 150);
-            } else {
-                refreshData();
-                finalizeSelection();
-            }
+            } else { refreshData(); finalizeSelection(); }
         }
 
-        function copyCurrentRange() {
-            copiedData = Array.from(document.querySelectorAll('.cell')).filter(c => !c.classList.contains('fold')).map(c => ({ hand: c.dataset.hand, action: Array.from(c.classList).find(cls => cls.startsWith('action-')) }));
-            document.getElementById('pasteBtn').style.display = 'block';
-        }
-        async function pasteRange() {
+        async function updateHand(hand, action) {
             const { data: { user } } = await sbClient.auth.getUser();
             const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
-            const upserts = copiedData.map(d => ({ user_id: user.id, hand: d.hand, action: d.action, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: vsPos, stack_depth: parseInt(document.getElementById('stackSelect').value) }));
-            await sbClient.from('ranges').upsert(upserts); refreshData();
+            await sbClient.from('ranges').upsert({ user_id: user.id, hand, action, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: vsPos, stack_depth: parseInt(document.getElementById('stackSelect').value), is_finalized: isCurrentRangeFinalized });
         }
-
-        async function resetCurrentRange() {
-            if (!confirm("Vider cette range ?")) return;
-            const { data: { user } } = await sbClient.auth.getUser();
-            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
-            await sbClient.from('ranges').delete().eq('user_id', user.id).eq('position', document.getElementById('posSelect').value).eq('situation', currentTab).eq('vs_position', vsPos).eq('stack_depth', parseInt(document.getElementById('stackSelect').value));
-            refreshData();
-        }
-
-        async function signIn() {
-            const { error } = await sbClient.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('password').value });
-            if (error) alert(error.message);
-        }
-
-        let isCurrentRangeFinalized = false;
 
         async function toggleFinalize() {
             const { data: { user } } = await sbClient.auth.getUser();
             if (!user) return;
-        
             isCurrentRangeFinalized = !isCurrentRangeFinalized;
-            
-            const pos = document.getElementById('posSelect').value;
-            const stack = parseInt(document.getElementById('stackSelect').value);
-            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
-        
-            // On met à jour TOUTES les mains de cette configuration précise
-            const { error } = await sbClient
-                .from('ranges')
-                .update({ is_finalized: isCurrentRangeFinalized })
-                .eq('user_id', user.id)
-                .eq('position', pos)
-                .eq('situation', currentTab)
-                .eq('vs_position', vsPos)
-                .eq('stack_depth', stack);
-        
-            if (error) {
-                console.error("Erreur finalisation:", error);
-            } else {
-                updateFinalizeUI();
-            }
+            const { error } = await sbClient.from('ranges').update({ is_finalized: isCurrentRangeFinalized }).eq('user_id', user.id).eq('position', document.getElementById('posSelect').value).eq('situation', currentTab).eq('vs_position', (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY')).eq('stack_depth', parseInt(document.getElementById('stackSelect').value));
+            if (!error) updateFinalizeUI();
         }
-        
+
         function updateFinalizeUI() {
             const btn = document.getElementById('btnFinalize');
             const icon = document.getElementById('finalizeIcon');
             const text = document.getElementById('finalizeText');
-            
-            if (isCurrentRangeFinalized) {
-                btn.style.borderBottomColor = "#2ecc71";
-                icon.innerText = "✅";
-                text.innerText = "FINALISÉE";
-                text.style.color = "#2ecc71";
-            } else {
-                btn.style.borderBottomColor = "#555";
-                icon.innerText = "⚪";
-                text.innerText = "BROUILLON";
-                text.style.color = "#888";
-            }
+            btn.style.borderBottomColor = isCurrentRangeFinalized ? "#2ecc71" : "#555";
+            icon.innerText = isCurrentRangeFinalized ? "✅" : "⚪";
+            text.innerText = isCurrentRangeFinalized ? "FINALISÉE" : "BROUILLON";
+            text.style.color = isCurrentRangeFinalized ? "#2ecc71" : "#888";
         }
 
-        sbClient.auth.onAuthStateChange((event, session) => { if (session) { document.getElementById('login-overlay').style.display = 'none'; updateVsPosOptions(); refreshData(); } });
+        // Fonctions techniques conservées (Export, Quiz, Copy/Paste, Reset, SignIn)
+        function toggleQuiz() { quizActive = !quizActive; document.getElementById('quizSection').style.display = quizActive ? 'block' : 'none'; document.getElementById('pokerGrid').style.display = quizActive ? 'none' : 'grid'; if (quizActive) { score = 0; questionsDone = 0; nextQuizHand(); } }
+        function nextQuizHand() { if (questionsDone >= 20) { alert(`Score : ${score} / 20`); toggleQuiz(); return; } buildPalette('quizOptions', true); const cells = Array.from(document.querySelectorAll('.cell')); const randomHand = cells[Math.floor(Math.random() * cells.length)].dataset.hand; document.getElementById('quizHand').innerText = randomHand; const cell = document.querySelector(`[data-hand="${randomHand}"]`); quizCorrectAction = Array.from(cell.classList).find(cls => cls.startsWith('action-') || cls === 'fold') || 'fold'; document.getElementById('quizCount').innerText = questionsDone + 1; document.getElementById('quizScore').innerText = score; }
+        function checkQuiz(userAction) { if (userAction === quizCorrectAction) score++; else alert(`Faux ! C'était : ${quizCorrectAction.toUpperCase()}`); questionsDone++; nextQuizHand(); }
+        function copyCurrentRange() { copiedData = Array.from(document.querySelectorAll('.cell')).filter(c => !c.classList.contains('fold')).map(c => ({ hand: c.dataset.hand, action: Array.from(c.classList).find(cls => cls.startsWith('action-')) })); document.getElementById('pasteBtn').style.display = 'block'; }
+        async function pasteRange() { const { data: { user } } = await sbClient.auth.getUser(); const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY'; const upserts = copiedData.map(d => ({ user_id: user.id, hand: d.hand, action: d.action, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: vsPos, stack_depth: parseInt(document.getElementById('stackSelect').value), is_finalized: isCurrentRangeFinalized })); await sbClient.from('ranges').upsert(upserts); refreshData(); }
+        function exportRange() { const activeHands = Array.from(document.querySelectorAll('.cell')).filter(c => c.classList.contains(currentAction)).map(c => c.dataset.hand); document.getElementById('ioText').value = activeHands.join(', '); }
+        async function importRange() { const textarea = document.getElementById('ioText'); const text = textarea.value; if(!text || currentAction === 'fold') { alert("Action requise"); return; } const { data: { user } } = await sbClient.auth.getUser(); const tokens = text.replace(/,/g, ' ').split(/\s+/).filter(t => t.length > 0); let handsToUpdate = new Set(); tokens.forEach(token => { let cleanToken = token.trim(); if (cleanToken.length === 3) cleanToken = cleanToken.substring(0, 2).toUpperCase() + cleanToken.substring(2).toLowerCase(); else cleanToken = cleanToken.toUpperCase(); if (cleanToken.includes('+')) { const base = cleanToken.replace('+', ''); if (base.length === 2) { const start = ranks.indexOf(base[0]); for (let i = 0; i <= start; i++) handsToUpdate.add(ranks[i] + ranks[i]); } else if (base.length === 3) { const r1 = base[0], type = base[2], limit = ranks.indexOf(base[1]), start = ranks.indexOf(r1) + 1; for (let i = start; i <= limit; i++) handsToUpdate.add(r1 + ranks[i] + type); } } else handsToUpdate.add(cleanToken); }); const upserts = Array.from(handsToUpdate).map(h => ({ user_id: user.id, hand: h, action: currentAction, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY'), stack_depth: parseInt(document.getElementById('stackSelect').value), is_finalized: isCurrentRangeFinalized })); await sbClient.from('ranges').upsert(upserts); refreshData(); }
+        async function resetCurrentRange() { if (!confirm("Vider cette range ?")) return; const { data: { user } } = await sbClient.auth.getUser(); await sbClient.from('ranges').delete().eq('user_id', user.id).eq('position', document.getElementById('posSelect').value).eq('situation', currentTab).eq('vs_position', (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY')).eq('stack_depth', parseInt(document.getElementById('stackSelect').value)); refreshData(); }
+        async function signIn() { const { error } = await sbClient.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('password').value }); if (error) alert(error.message); }
+
+        sbClient.auth.onAuthStateChange((event, session) => { if (session) { document.getElementById('login-overlay').style.display = 'none'; switchTab('RFI'); } });
     </script>
 </body>
 </html>
