@@ -196,18 +196,68 @@
         }
 
         async function refreshData() {
+            // 1. On sécurise l'interface
+            const statusEl = document.getElementById('status');
+            if (statusEl) statusEl.innerText = "Sync...";
+            
+            // 2. On vérifie la palette
             buildPalette('palette');
+        
+            // 3. Récupération des filtres
             const pos = document.getElementById('posSelect').value;
             const stack = document.getElementById('stackSelect').value;
-            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
+            const vsPosSelect = document.getElementById('vsPosSelect');
+            const vsPos = (currentTab === 'DEFENSE' && vsPosSelect) ? vsPosSelect.value : 'ANY';
+        
+            // 4. Reset visuel de la grille
             document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
-            const { data } = await sbClient.from('ranges').select('*').eq('position', pos).eq('situation', currentTab).eq('vs_position', vsPos).eq('stack_depth', parseInt(stack));
-            if (data) data.forEach(row => {
-                const cell = document.querySelector(`[data-hand="${row.hand}"]`);
-                if (cell) cell.className = 'cell ' + row.action;
-            });
-            updateStats();
+        
+            try {
+                const { data: { user } } = await sbClient.auth.getUser();
+                if (!user) {
+                    if (statusEl) statusEl.innerText = "Non connecté";
+                    return;
+                }
+        
+                const { data, error } = await sbClient
+                    .from('ranges')
+                    .select('*')
+                    .eq('user_id', user.id) // Ajout de sécurité pour ne voir que TES ranges
+                    .eq('position', pos)
+                    .eq('situation', currentTab)
+                    .eq('vs_position', vsPos)
+                    .eq('stack_depth', parseInt(stack));
+        
+                if (error) throw error;
+        
+                if (data) {
+                    data.forEach(row => {
+                        const cell = document.querySelector(`[data-hand="${row.hand}"]`);
+                        if (cell) cell.className = 'cell ' + row.action;
+                    });
+                }
+                
+                updateStats();
+                if (statusEl) statusEl.innerText = "Connecté - " + pos;
+        
+            } catch (err) {
+                console.error("Erreur de synchro:", err);
+                if (statusEl) statusEl.innerText = "Erreur de connexion";
+            }
         }
+        
+        // Correction du listener de connexion pour éviter la boucle infinie
+        sbClient.auth.onAuthStateChange((event, session) => {
+            const loginOverlay = document.getElementById('login-overlay');
+            if (session) {
+                if (loginOverlay) loginOverlay.style.display = 'none';
+                updateVsPosOptions();
+                // Petit délai pour laisser le DOM se mettre à jour
+                setTimeout(refreshData, 100);
+            } else {
+                if (loginOverlay) loginOverlay.style.display = 'flex';
+            }
+        });
 
         function updateStats() {
             let total = 0, played = 0, aggro = 0;
