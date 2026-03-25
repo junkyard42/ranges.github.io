@@ -115,6 +115,10 @@
                 <span style="font-size: 10px; color: #888;">PFR</span>
                 <span id="statPFR" style="display: block; font-size: 18px; font-weight: bold;">0.0%</span>
             </div>
+            <div id="btnFinalize" onclick="toggleFinalize()" style="cursor: pointer; background: #2a2a2a; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid #555; transition: 0.3s;">
+                <span id="finalizeIcon" style="font-size: 18px;">⚪</span>
+                <span id="finalizeText" style="display: block; font-size: 10px; color: #888;">BROUILLON</span>
+            </div>
         </div>
 
         <div id="pokerGrid" class="grid"></div>
@@ -420,6 +424,49 @@
         async function signIn() {
             const { error } = await sbClient.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('password').value });
             if (error) alert(error.message);
+        }
+
+        let isCurrentRangeFinalized = false;
+
+        async function toggleFinalize() {
+            isCurrentRangeFinalized = !isCurrentRangeFinalized;
+            
+            const { data: { user } } = await sbClient.auth.getUser();
+            const pos = document.getElementById('posSelect').value;
+            const stack = document.getElementById('stackSelect').value;
+            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
+        
+            // On stocke cette info dans une table dédiée ou une colonne de ta table ranges
+            // Ici, on va simplement mettre à jour l'UI et on pourrait créer une table 'range_status'
+            updateFinalizeUI();
+            
+            // Sauvegarde dans Supabase (Table suggérée : range_status)
+            await sbClient.from('ranges').upsert({
+                user_id: user.id,
+                position: pos,
+                situation: currentTab,
+                vs_position: vsPos,
+                stack_depth: parseInt(stack),
+                is_finalized: isCurrentRangeFinalized
+            });
+        }
+        
+        function updateFinalizeUI() {
+            const btn = document.getElementById('btnFinalize');
+            const icon = document.getElementById('finalizeIcon');
+            const text = document.getElementById('finalizeText');
+            
+            if (isCurrentRangeFinalized) {
+                btn.style.borderBottomColor = "#2ecc71";
+                icon.innerText = "✅";
+                text.innerText = "FINALISÉE";
+                text.style.color = "#2ecc71";
+            } else {
+                btn.style.borderBottomColor = "#555";
+                icon.innerText = "⚪";
+                text.innerText = "BROUILLON";
+                text.style.color = "#888";
+            }
         }
 
         sbClient.auth.onAuthStateChange((event, session) => { if (session) { document.getElementById('login-overlay').style.display = 'none'; updateVsPosOptions(); refreshData(); } });
