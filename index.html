@@ -51,7 +51,15 @@
         .quick-presets { display: flex; gap: 6px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
         .quick-presets::-webkit-scrollbar { display: none; }
         .quick-presets button { flex: 0 0 auto; border: none; border-radius: 6px; font-size: 10px; cursor: pointer; padding: 8px 12px; white-space: nowrap; font-weight: bold; }
-        .quick-presets button.selected-preset { border: 3px solid #f1c40f !important; box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); transform: scale(1.05);}
+        /* Remplace ta règle actuelle par celle-ci */
+        .quick-presets button.selected-preset {
+            outline: 3px solid #f1c40f !important;
+            outline-offset: -3px; /* Force la bordure à l'intérieur pour ne pas décaler les voisins */
+            box-shadow: 0 0 15px rgba(241, 196, 15, 0.8);
+            transform: scale(1.05);
+            z-index: 10;
+            position: relative;
+        }
         
         #login-overlay { position: fixed; inset: 0; background: #121212; display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 15px; }
         input { padding: 12px; border-radius: 6px; border: 1px solid #333; width: 250px; background: #1e1e1e; color: white; }
@@ -414,42 +422,42 @@
             const POSITION_ORDER = ["UTG", "UTG+1", "MP", "HJ", "CO", "BTN", "SB", "BB"];
             const myIndex = POSITION_ORDER.indexOf(document.getElementById('posSelect').value);
             let html = "";
-            //gestion du bord dorée des boutons
-            document.querySelectorAll('#presetGroup button').forEach(btn => btn.classList.remove('selected-preset'));
+            
+            // On ne retire la classe QUE si l'appel ne vient pas d'un applyPreset
+            // Mais pour l'instant, assure-toi juste que cette ligne est là :
+            document.querySelectorAll('.quick-presets button').forEach(btn => btn.classList.remove('selected-preset'));
             
             for (let i = 0; i < myIndex; i++) {
-                if (POSITION_ORDER[i] === "SB") html += `<option value="SB">SB (Open)</option><option value="SB_LIMP">SB (Limp)</option>`;
-                else html += `<option value="${POSITION_ORDER[i]}">${POSITION_ORDER[i]}</option>`;
+                if (POSITION_ORDER[i] === "SB") {
+                    html += `<option value="SB">SB (Open)</option><option value="SB_LIMP">SB (Limp)</option>`;
+                } else {
+                    html += `<option value="${POSITION_ORDER[i]}">${POSITION_ORDER[i]}</option>`;
+                }
             }
             document.getElementById('vsPosSelect').innerHTML = html || `<option value="ANY">ANY</option>`;
         }
 
         function applyPreset(sit, myPos, vsPos, btnElement) {
-            // 1. Gestion visuelle des bordures
-            document.querySelectorAll('#presetGroup button').forEach(btn => {
-                btn.classList.remove('selected-preset');
-            });
-            if (btnElement) btnElement.classList.add('selected-preset');
-        
-            // 2. Application des filtres
+            // 1. On change les valeurs
             document.getElementById('posSelect').value = myPos;
-            
-            // On force la mise à jour des options Vs Pos avant de changer la valeur
-            updateVsPosOptions(); 
+            updateVsPosOptions(); // Attention : cette fonction retire les classes .selected-preset
             
             switchTab(sit);
         
             if (vsPos !== 'ANY') {
-                // Petit timeout pour laisser le DOM injecter les options Vs Pos
                 setTimeout(() => { 
                     const vsSelect = document.getElementById('vsPosSelect');
                     if (vsSelect) {
                         vsSelect.value = vsPos;
                         refreshData();
+                        // 2. On ré-applique la classe dorée APRES les updates
+                        if (btnElement) btnElement.classList.add('selected-preset');
                     }
                 }, 150);
             } else {
                 refreshData();
+                // 2. On ré-applique ici aussi
+                if (btnElement) btnElement.classList.add('selected-preset');
             }
         }
 
