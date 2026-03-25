@@ -145,7 +145,7 @@
         const sbClient = supabase.createClient(S_URL, S_KEY);
         const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
         let currentTab = 'RFI', currentAction = 'fold', quizActive = false, score = 0, questionsDone = 0, quizCorrectAction = "", copiedData = null, isCurrentRangeFinalized = false;
-
+    
         const actionsSB = [
             { id: 'fold', label: 'FOLD', class: 'fold' },
             { id: 'action-l-fold', label: 'L-FOLD', class: 'action-l-fold' }, { id: 'action-l-call', label: 'L-CALL', class: 'action-l-call' },
@@ -153,18 +153,19 @@
             { id: 'action-o-fold', label: 'O-FOLD', class: 'action-o-fold' }, { id: 'action-o-call', label: 'O-CALL', class: 'action-o-call' }, 
             { id: 'action-o-4bet', label: 'O-4BET', class: 'action-o-4bet' }, { id: 'action-o-ai', label: 'O-AI', class: 'action-o-ai' }
         ];
-
+    
         const actionsStd = [
             { id: 'fold', label: 'FOLD', class: 'fold' },
             { id: 'action-blue', label: 'RAISE/FOLD', class: 'action-blue' }, { id: 'action-green', label: 'RAISE/CALL', class: 'action-green' },
             { id: 'action-orange', label: '3/4-BET', class: 'action-orange' }, { id: 'action-purple', label: 'ALL-IN', class: 'action-purple' }
         ];
-
+    
         const actionsPush = [
             { id: 'fold', label: 'FOLD', class: 'fold' },
             { id: 'action-o-ai', label: 'ALL-IN', class: 'action-o-ai' }
         ];
-
+    
+        // Initialisation de la grille
         const grid = document.getElementById('pokerGrid');
         for (let i = 0; i < 13; i++) {
             for (let j = 0; j < 13; j++) {
@@ -180,7 +181,7 @@
                 grid.appendChild(cell);
             }
         }
-
+    
         function saveCurrentState() {
             const state = {
                 tab: currentTab,
@@ -190,10 +191,11 @@
             };
             localStorage.setItem('poker_pro_state', JSON.stringify(state));
         }
-
+    
         function buildPalette(targetId, isQuiz = false) {
             const pos = document.getElementById('posSelect').value;
             const container = document.getElementById(targetId);
+            if (!container) return;
             container.innerHTML = '';
             
             let list;
@@ -205,7 +207,7 @@
                 list = isSBMode ? actionsSB : actionsStd;
                 container.className = isSBMode ? 'palette sb-mode' : 'palette std-mode';
             }
-
+    
             list.forEach(a => {
                 const btn = document.createElement('div');
                 btn.className = `tool ${a.class} ${!isQuiz && currentAction === a.id ? 'active' : ''}`;
@@ -215,34 +217,35 @@
             });
             if (!list.find(a => a.id === currentAction)) currentAction = 'fold';
         }
-
+    
         function setAction(id, btn) {
             currentAction = id;
             document.querySelectorAll('#palette .tool').forEach(t => t.classList.remove('active'));
             btn.classList.add('active');
         }
-
+    
         async function refreshData() {
             const statusEl = document.getElementById('status');
             if (statusEl) statusEl.innerText = "Sync...";
-            buildPalette('palette');
             
             const pos = document.getElementById('posSelect').value;
             const stack = document.getElementById('stackSelect').value;
             const vsPosSelect = document.getElementById('vsPosSelect');
             const vsPos = (currentTab === 'DEFENSE' && vsPosSelect) ? vsPosSelect.value : 'ANY';
-
+    
+            buildPalette('palette');
             saveCurrentState();
+            
             document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
             
             try {
                 const { data: { user } } = await sbClient.auth.getUser();
                 if (!user) return;
-
+    
                 const { data: statusData } = await sbClient.from('ranges').select('is_finalized').eq('user_id', user.id).eq('position', pos).eq('situation', currentTab).eq('vs_position', vsPos).eq('stack_depth', parseInt(stack)).limit(1);
                 isCurrentRangeFinalized = (statusData && statusData.length > 0) ? statusData[0].is_finalized : false;
                 updateFinalizeUI(); 
-
+    
                 const { data, error } = await sbClient.from('ranges').select('*').eq('user_id', user.id).eq('position', pos).eq('situation', currentTab).eq('vs_position', vsPos).eq('stack_depth', parseInt(stack));
                 if (data) data.forEach(row => {
                     const cell = document.querySelector(`[data-hand="${row.hand}"]`);
@@ -252,7 +255,7 @@
                 if (statusEl) statusEl.innerText = "Connecté - " + pos;
             } catch (err) { console.error(err); }
         }
-
+    
         function updateStats() {
             let total = 0, played = 0, aggro = 0;
             document.querySelectorAll('.cell').forEach(c => {
@@ -264,13 +267,13 @@
             document.getElementById('statVPIP').innerText = (played/total*100).toFixed(1) + "%";
             document.getElementById('statPFR').innerText = (aggro/total*100).toFixed(1) + "%";
         }
-
-        function switchTab(tab) {
+    
+        function switchTab(tab, skipRefresh = false) {
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             const tabBtn = document.getElementById('tab-' + tab);
             if(tabBtn) tabBtn.classList.add('active');
-
+    
             const stackSelect = document.getElementById('stackSelect');
             if (tab === 'PUSH') {
                 let pushOptions = "";
@@ -281,17 +284,16 @@
                 stackSelect.innerHTML = `<option value="100">100 BB</option><option value="80">80 BB</option><option value="60">60 BB</option><option value="40">40 BB</option><option value="30">30 BB</option><option value="20">20 BB</option><option value="14">14 BB</option><option value="10">10 BB</option>`;
                 document.getElementById('vsPosContainer').style.display = (tab === 'DEFENSE') ? 'block' : 'none';
             }
-
+    
             updateVsPosOptions(); 
-            saveCurrentState();
-            refreshData();
+            if (!skipRefresh) refreshData();
         }
-
+    
         function updateVsPosOptions() {
             const POSITION_ORDER = ["UTG", "UTG+1", "MP", "HJ", "CO", "BTN", "SB", "BB"];
-            const myIndex = POSITION_ORDER.indexOf(document.getElementById('posSelect').value);
+            const myPos = document.getElementById('posSelect').value;
+            const myIndex = POSITION_ORDER.indexOf(myPos);
             let html = "";
-            document.querySelectorAll('#presetGroup button').forEach(btn => btn.classList.remove('selected-preset'));
             
             for (let i = 0; i < myIndex; i++) {
                 if (POSITION_ORDER[i] === "SB") {
@@ -302,32 +304,32 @@
             }
             document.getElementById('vsPosSelect').innerHTML = html || `<option value="ANY">ANY</option>`;
         }
-
+    
         function applyPreset(sit, myPos, vsPos, btnElement) {
             document.getElementById('posSelect').value = myPos;
             updateVsPosOptions(); 
-            switchTab(sit);
-            const finalizeSelection = () => {
-                if (btnElement) {
-                    document.querySelectorAll('#presetGroup button').forEach(b => b.classList.remove('selected-preset'));
-                    btnElement.classList.add('selected-preset');
-                }
-                saveCurrentState();
-            };
-            if (vsPos !== 'ANY') {
-                setTimeout(() => { 
+            switchTab(sit, true); // On change l'onglet sans refresh immédiat
+            
+            if (btnElement) {
+                document.querySelectorAll('#presetGroup button').forEach(b => b.classList.remove('selected-preset'));
+                btnElement.classList.add('selected-preset');
+            }
+    
+            setTimeout(() => {
+                if (vsPos !== 'ANY') {
                     const vsSelect = document.getElementById('vsPosSelect');
-                    if (vsSelect) { vsSelect.value = vsPos; refreshData(); finalizeSelection(); }
-                }, 150);
-            } else { refreshData(); finalizeSelection(); }
+                    if (vsSelect) vsSelect.value = vsPos;
+                }
+                refreshData(); // Refresh final une fois tout setté
+            }, 50);
         }
-
+    
         async function updateHand(hand, action) {
             const { data: { user } } = await sbClient.auth.getUser();
             const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
             await sbClient.from('ranges').upsert({ user_id: user.id, hand, action, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: vsPos, stack_depth: parseInt(document.getElementById('stackSelect').value), is_finalized: isCurrentRangeFinalized });
         }
-
+    
         async function toggleFinalize() {
             const { data: { user } } = await sbClient.auth.getUser();
             if (!user) return;
@@ -335,17 +337,19 @@
             const { error } = await sbClient.from('ranges').update({ is_finalized: isCurrentRangeFinalized }).eq('user_id', user.id).eq('position', document.getElementById('posSelect').value).eq('situation', currentTab).eq('vs_position', (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY')).eq('stack_depth', parseInt(document.getElementById('stackSelect').value));
             if (!error) updateFinalizeUI();
         }
-
+    
         function updateFinalizeUI() {
             const btn = document.getElementById('btnFinalize');
             const icon = document.getElementById('finalizeIcon');
             const text = document.getElementById('finalizeText');
+            if(!btn) return;
             btn.style.borderBottomColor = isCurrentRangeFinalized ? "#2ecc71" : "#555";
             icon.innerText = isCurrentRangeFinalized ? "✅" : "⚪";
             text.innerText = isCurrentRangeFinalized ? "FINALISÉE" : "BROUILLON";
             text.style.color = isCurrentRangeFinalized ? "#2ecc71" : "#888";
         }
-
+    
+        // Quiz, Copy, Export, Import restent inchangés
         function toggleQuiz() { quizActive = !quizActive; document.getElementById('quizSection').style.display = quizActive ? 'block' : 'none'; document.getElementById('pokerGrid').style.display = quizActive ? 'none' : 'grid'; if (quizActive) { score = 0; questionsDone = 0; nextQuizHand(); } }
         function nextQuizHand() { if (questionsDone >= 20) { alert(`Score : ${score} / 20`); toggleQuiz(); return; } buildPalette('quizOptions', true); const cells = Array.from(document.querySelectorAll('.cell')); const randomHand = cells[Math.floor(Math.random() * cells.length)].dataset.hand; document.getElementById('quizHand').innerText = randomHand; const cell = document.querySelector(`[data-hand="${randomHand}"]`); quizCorrectAction = Array.from(cell.classList).find(cls => cls.startsWith('action-') || cls === 'fold') || 'fold'; document.getElementById('quizCount').innerText = questionsDone + 1; document.getElementById('quizScore').innerText = score; }
         function checkQuiz(userAction) { if (userAction === quizCorrectAction) score++; else alert(`Faux ! C'était : ${quizCorrectAction.toUpperCase()}`); questionsDone++; nextQuizHand(); }
@@ -356,18 +360,13 @@
         async function importRange() {
             const textarea = document.getElementById('ioText');
             const text = textarea.value;
-            if (!text || currentAction === 'fold') {
-                alert("Sélectionnez une action (ex: ALL-IN) et collez le texte.");
-                return;
-            }
-        
+            if (!text || currentAction === 'fold') { alert("Sélectionnez une action (ex: ALL-IN) et collez le texte."); return; }
             const { data: { user } } = await sbClient.auth.getUser();
             const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
             const pos = document.getElementById('posSelect').value;
             const stack = parseInt(document.getElementById('stackSelect').value);
             const tokens = text.replace(/[,;]/g, ' ').split(/\s+/).filter(t => t.length > 0);
             let handsToUpdate = new Set();
-        
             tokens.forEach(token => {
                 let t = token.trim();
                 if (t.includes('+')) {
@@ -375,61 +374,52 @@
                     if (base.length === 2) { 
                         const r = base[0].toUpperCase();
                         const startIndex = ranks.indexOf(r);
-                        for (let i = 0; i <= startIndex; i++) {
-                            handsToUpdate.add(ranks[i] + ranks[i]);
-                        }
+                        for (let i = 0; i <= startIndex; i++) handsToUpdate.add(ranks[i] + ranks[i]);
                     } else if (base.length === 3) { 
                         const r1 = base[0].toUpperCase();
                         const r2 = base[1].toUpperCase();
                         const type = base[2].toLowerCase();
                         const rank1Index = ranks.indexOf(r1);
                         const rank2Index = ranks.indexOf(r2);
-                        // Correction de la boucle : on part de la carte la plus haute vers la plus basse citée
-                        for (let i = rank1Index + 1; i <= rank2Index; i++) {
-                            handsToUpdate.add(r1 + ranks[i] + type);
-                        }
+                        for (let i = rank1Index + 1; i <= rank2Index; i++) handsToUpdate.add(r1 + ranks[i] + type);
                     }
                 } else {
-                    let hand = t;
-                    if (t.length === 3) {
-                        hand = t.substring(0, 2).toUpperCase() + t.substring(2).toLowerCase();
-                    } else {
-                        hand = t.toUpperCase();
-                    }
+                    let hand = (t.length === 3) ? t.substring(0, 2).toUpperCase() + t.substring(2).toLowerCase() : t.toUpperCase();
                     handsToUpdate.add(hand);
                 }
             });
-        
-            const upserts = Array.from(handsToUpdate).map(h => ({
-                user_id: user.id, hand: h, action: currentAction, position: pos,
-                situation: currentTab, vs_position: vsPos, stack_depth: stack, is_finalized: isCurrentRangeFinalized
-            }));
-        
+            const upserts = Array.from(handsToUpdate).map(h => ({ user_id: user.id, hand: h, action: currentAction, position: pos, situation: currentTab, vs_position: vsPos, stack_depth: stack, is_finalized: isCurrentRangeFinalized }));
             const { error } = await sbClient.from('ranges').upsert(upserts);
-            if (error) console.error("Erreur d'import:", error);
-            else { await refreshData(); alert(`${upserts.length} mains importées !`); textarea.value = ""; }
+            if (error) console.error(error); else { await refreshData(); alert(`${upserts.length} mains importées !`); textarea.value = ""; }
         }
-
+    
         async function resetCurrentRange() { if (!confirm("Vider cette range ?")) return; const { data: { user } } = await sbClient.auth.getUser(); await sbClient.from('ranges').delete().eq('user_id', user.id).eq('position', document.getElementById('posSelect').value).eq('situation', currentTab).eq('vs_position', (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY')).eq('stack_depth', parseInt(document.getElementById('stackSelect').value)); refreshData(); }
         async function signIn() { const { error } = await sbClient.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('password').value }); if (error) alert(error.message); }
-
+    
+        // --- LE CŒUR DE LA CORRECTION : RESTAURATION SÉCURISÉE ---
         sbClient.auth.onAuthStateChange((event, session) => { 
             if (session) { 
                 document.getElementById('login-overlay').style.display = 'none'; 
                 const savedState = localStorage.getItem('poker_pro_state');
                 if (savedState) {
                     const state = JSON.parse(savedState);
-                    currentTab = state.tab;
-                    switchTab(state.tab);
+                    
+                    // On restaure l'onglet SANS refresh immédiat
+                    switchTab(state.tab, true); 
+                    
+                    // On force la valeur de la position
                     document.getElementById('posSelect').value = state.pos;
                     updateVsPosOptions();
+    
+                    // On laisse un tout petit délai pour que le DOM respire, puis on restaure le reste
                     setTimeout(() => {
                         document.getElementById('stackSelect').value = state.stack;
                         if (state.tab === 'DEFENSE' && document.getElementById('vsPosSelect')) {
                             document.getElementById('vsPosSelect').value = state.vsPos;
                         }
+                        // SEUL ET UNIQUE refresh au démarrage
                         refreshData();
-                    }, 200);
+                    }, 100);
                 } else {
                     switchTab('RFI'); 
                 }
