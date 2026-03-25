@@ -51,7 +51,8 @@
         .quick-presets { display: flex; gap: 6px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
         .quick-presets::-webkit-scrollbar { display: none; }
         .quick-presets button { flex: 0 0 auto; border: none; border-radius: 6px; font-size: 10px; cursor: pointer; padding: 8px 12px; white-space: nowrap; font-weight: bold; }
-
+        .quick-presets button.selected-preset { border: 3px solid #f1c40f !important; box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); transform: scale(1.05);}
+        
         #login-overlay { position: fixed; inset: 0; background: #121212; display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 15px; }
         input { padding: 12px; border-radius: 6px; border: 1px solid #333; width: 250px; background: #1e1e1e; color: white; }
     </style>
@@ -82,11 +83,12 @@
                 </select>
             </div>
 
-            <div class="quick-presets">
-                <button onclick="applyPreset('RFI', 'BTN', 'ANY')" style="background: #2e86de; color: white;">🔥 RFI BTN</button>
-                <button onclick="applyPreset('RFI', 'SB', 'ANY')" style="background: #d35400; color: white;">🔥 RFI SB</button>
-                <button onclick="applyPreset('DEFENSE', 'SB', 'BTN')" style="background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d;">🎯 SB vs BTN</button>
-                <button onclick="applyPreset('DEFENSE', 'BB', 'BTN')" style="background: #28b463; color: white;">🎯 BB vs BTN</button>
+            <div class="quick-presets" id="presetGroup">
+                <button onclick="applyPreset('RFI', 'BTN', 'ANY', this)" style="background: #2e86de; color: white;">🔥 RFI BTN</button>
+                <button onclick="applyPreset('RFI', 'SB', 'ANY', this)" style="background: #d35400; color: white;">🔥 RFI SB</button>
+                <button onclick="applyPreset('DEFENSE', 'SB', 'BTN', this)" style="background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d;">🎯 SB vs BTN</button>
+                <button onclick="applyPreset('DEFENSE', 'BB', 'BTN', this)" style="background: #28b463; color: white;">🎯 BB vs BTN</button>
+                <button onclick="applyPreset('DEFENSE', 'BB', 'SB_LIMP', this)" style="background: #8e44ad; color: white;">🃏 BB vs LIMP SB</button>
             </div>
             
             <select id="posSelect" onchange="updateVsPosOptions(); refreshData();">
@@ -220,6 +222,8 @@
         
             // 4. Reset visuel de la grille
             document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
+            //on enlève la bordure dorée des boutons si on passe par le menu
+            document.querySelectorAll('#presetGroup button').forEach(btn => btn.classList.remove('selected-preset'));
         
             try {
                 const { data: { user } } = await sbClient.auth.getUser();
@@ -410,6 +414,9 @@
             const POSITION_ORDER = ["UTG", "UTG+1", "MP", "HJ", "CO", "BTN", "SB", "BB"];
             const myIndex = POSITION_ORDER.indexOf(document.getElementById('posSelect').value);
             let html = "";
+            //gestion du bord dorée des boutons
+            document.querySelectorAll('#presetGroup button').forEach(btn => btn.classList.remove('selected-preset'));
+            
             for (let i = 0; i < myIndex; i++) {
                 if (POSITION_ORDER[i] === "SB") html += `<option value="SB">SB (Open)</option><option value="SB_LIMP">SB (Limp)</option>`;
                 else html += `<option value="${POSITION_ORDER[i]}">${POSITION_ORDER[i]}</option>`;
@@ -417,10 +424,33 @@
             document.getElementById('vsPosSelect').innerHTML = html || `<option value="ANY">ANY</option>`;
         }
 
-        function applyPreset(sit, myPos, vsPos) {
+        function applyPreset(sit, myPos, vsPos, btnElement) {
+            // 1. Gestion visuelle des bordures
+            document.querySelectorAll('#presetGroup button').forEach(btn => {
+                btn.classList.remove('selected-preset');
+            });
+            if (btnElement) btnElement.classList.add('selected-preset');
+        
+            // 2. Application des filtres
             document.getElementById('posSelect').value = myPos;
+            
+            // On force la mise à jour des options Vs Pos avant de changer la valeur
+            updateVsPosOptions(); 
+            
             switchTab(sit);
-            if(vsPos !== 'ANY') setTimeout(() => { document.getElementById('vsPosSelect').value = vsPos; refreshData(); }, 100);
+        
+            if (vsPos !== 'ANY') {
+                // Petit timeout pour laisser le DOM injecter les options Vs Pos
+                setTimeout(() => { 
+                    const vsSelect = document.getElementById('vsPosSelect');
+                    if (vsSelect) {
+                        vsSelect.value = vsPos;
+                        refreshData();
+                    }
+                }, 150);
+            } else {
+                refreshData();
+            }
         }
 
         function copyCurrentRange() {
