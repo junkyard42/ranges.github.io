@@ -171,7 +171,12 @@
                 let hand = (i < j) ? ranks[i]+ranks[j]+"s" : (i > j) ? ranks[j]+ranks[i]+"o" : ranks[i]+ranks[j];
                 const cell = document.createElement('div');
                 cell.className = 'cell fold'; cell.textContent = hand; cell.dataset.hand = hand;
-                cell.onclick = () => { if(quizActive) return; cell.className = 'cell ' + currentAction; updateHand(hand, currentAction); updateStats(); };
+                cell.onclick = () => { 
+                    if(quizActive || isCurrentRangeFinalized) return; // Bloqué si finalisé
+                    cell.className = 'cell ' + currentAction; 
+                    updateHand(hand, currentAction); 
+                    updateStats(); 
+                };
                 grid.appendChild(cell);
             }
         }
@@ -223,10 +228,26 @@
                     return;
                 }
         
+                // --- NOUVEAU : Récupérer le statut de finalisation ---
+                const { data: statusData } = await sbClient
+                    .from('ranges')
+                    .select('is_finalized')
+                    .eq('user_id', user.id)
+                    .eq('position', pos)
+                    .eq('situation', currentTab)
+                    .eq('vs_position', vsPos)
+                    .eq('stack_depth', parseInt(stack))
+                    .limit(1); // On vérifie juste une ligne
+        
+                // Si au moins une main de cette range est finalisée, on considère la range finalisée
+                isCurrentRangeFinalized = (statusData && statusData.length > 0) ? statusData[0].is_finalized : false;
+                updateFinalizeUI(); 
+                // ---------------------------------------------------
+        
                 const { data, error } = await sbClient
                     .from('ranges')
                     .select('*')
-                    .eq('user_id', user.id) // Ajout de sécurité pour ne voir que TES ranges
+                    .eq('user_id', user.id)
                     .eq('position', pos)
                     .eq('situation', currentTab)
                     .eq('vs_position', vsPos)
@@ -429,26 +450,30 @@
         let isCurrentRangeFinalized = false;
 
         async function toggleFinalize() {
+            const { data: { user } } = await sbClient.auth.getUser();
+            if (!user) return;
+        
             isCurrentRangeFinalized = !isCurrentRangeFinalized;
             
-            const { data: { user } } = await sbClient.auth.getUser();
             const pos = document.getElementById('posSelect').value;
-            const stack = document.getElementById('stackSelect').value;
+            const stack = parseInt(document.getElementById('stackSelect').value);
             const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
         
-            // On stocke cette info dans une table dédiée ou une colonne de ta table ranges
-            // Ici, on va simplement mettre à jour l'UI et on pourrait créer une table 'range_status'
-            updateFinalizeUI();
-            
-            // Sauvegarde dans Supabase (Table suggérée : range_status)
-            await sbClient.from('ranges').upsert({
-                user_id: user.id,
-                position: pos,
-                situation: currentTab,
-                vs_position: vsPos,
-                stack_depth: parseInt(stack),
-                is_finalized: isCurrentRangeFinalized
-            });
+            // On met à jour TOUTES les mains de cette configuration précise
+            const { error } = await sbClient
+                .from('ranges')
+                .update({ is_finalized: isCurrentRangeFinalized })
+                .eq('user_id', user.id)
+                .eq('position', pos)
+                .eq('situation', currentTab)
+                .eq('vs_position', vsPos)
+                .eq('stack_depth', stack);
+        
+            if (error) {
+                console.error("Erreur finalisation:", error);
+            } else {
+                updateFinalizeUI();
+            }
         }
         
         function updateFinalizeUI() {
