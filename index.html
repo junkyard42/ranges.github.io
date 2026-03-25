@@ -150,10 +150,10 @@
             <button onclick="toggleQuiz()" style="margin-top: 20px; background: none; color: #bdc3c7; border: 1px solid #7f8c8d; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;">Arrêter le Quiz</button>
         </div>
     </div>
-
+    
+    <script src="config.js"></script>
+    
     <script>
-        const S_URL = 'MON_URL';
-        const S_KEY = 'MA_CLE';
         const sbClient = supabase.createClient(S_URL, S_KEY);
 
         const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
