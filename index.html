@@ -252,23 +252,63 @@
         }
         async function importRange() {
             const text = document.getElementById('ioText').value.toUpperCase();
-            if(!text || currentAction === 'fold') return;
+            if(!text || currentAction === 'fold') {
+                alert("Collez du texte et sélectionnez une action (ex: O-CALL)");
+                return;
+            }
+        
             const { data: { user } } = await sbClient.auth.getUser();
+            if (!user) return;
+        
             const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
-            const tokens = text.split(',').map(t => t.trim());
-            let handsToUpdate = [];
+            const pos = document.getElementById('posSelect').value;
+            const stack = parseInt(document.getElementById('stackSelect').value);
+            
+            // Nettoyage et découpage du texte (gère espaces et virgules)
+            const tokens = text.split(/[\s,]+/).filter(t => t.length > 0);
+            let handsToUpdate = new Set(); // Utilisation d'un Set pour éviter les doublons avant l'envoi
+        
             tokens.forEach(token => {
-                if (token.includes('+')) {
-                    const base = token.replace('+', '');
-                    if (base.length === 2) { // Pairs 22+
-                        ranks.slice(0, ranks.indexOf(base[0]) + 1).forEach(r => handsToUpdate.push(r+r));
-                    } else { // AJs+
-                        ranks.slice(ranks.indexOf(base[0])+1, ranks.indexOf(base[1]) + 1).forEach(r => handsToUpdate.push(base[0]+r+base[2]));
+                const cleanToken = token.trim();
+                if (cleanToken.includes('+')) {
+                    const base = cleanToken.replace('+', '');
+                    if (base.length === 2) { // Pairs: 22+
+                        const startIndex = ranks.indexOf(base[0]);
+                        ranks.slice(0, startIndex + 1).forEach(r => handsToUpdate.add(r+r));
+                    } else if (base.length === 3) { // Suited/Offsuit: AJs+ ou AJo+
+                        const r1 = base[0], r2 = base[1], type = base[2];
+                        const stopIndex = ranks.indexOf(r2);
+                        const startIndex = ranks.indexOf(r1) + 1;
+                        ranks.slice(startIndex, stopIndex + 1).forEach(r => handsToUpdate.add(r1+r+type));
                     }
-                } else handsToUpdate.push(token);
+                } else {
+                    handsToUpdate.add(cleanToken);
+                }
             });
-            const upserts = handsToUpdate.map(h => ({ user_id: user.id, hand: h, action: currentAction, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: vsPos, stack_depth: parseInt(document.getElementById('stackSelect').value) }));
-            await sbClient.from('ranges').upsert(upserts); refreshData();
+        
+            // Conversion du Set en tableau d'objets pour Supabase
+            const upserts = Array.from(handsToUpdate).map(h => ({ 
+                user_id: user.id, 
+                hand: h, 
+                action: currentAction, 
+                position: pos, 
+                situation: currentTab, 
+                vs_position: vsPos, 
+                stack_depth: stack 
+            }));
+        
+            // Appel à Supabase avec onConflict pour résoudre l'erreur 409
+            const { error } = await sbClient
+                .from('ranges')
+                .upsert(upserts, { onConflict: 'user_id,hand,position,situation,vs_position,stack_depth' });
+        
+            if (error) {
+                console.error("Erreur Import:", error);
+                alert("Erreur lors de l'import : " + error.message);
+            } else {
+                refreshData();
+                alert(`${upserts.length} mains synchronisées avec succès !`);
+            }
         }
 
         // --- SYNC ---
