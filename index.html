@@ -9,7 +9,6 @@
         body { font-family: 'Inter', sans-serif; background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; }
         .container { background: #1e1e1e; padding: 15px; border-radius: 12px; width: 100%; max-width: 500px; box-sizing: border-box; }
         
-        /* Onglets */
         .tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #2a2a2a; padding: 5px; border-radius: 8px; }
         .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 6px; font-weight: bold; font-size: 13px; color: #888; }
         .tab.active { background: #3498db; color: white; }
@@ -20,17 +19,19 @@
         .grid { display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; }
         .cell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; cursor: pointer; border-radius: 2px; border: 1px solid rgba(255,255,255,0.03); }
         
-        /* Couleurs Dynamiques */
         .fold { background: #2a2a2a; color: #555; }
-        .action-blue { background: #3498db; color: white; } /* Open-Fold OU Fold */
-        .action-green { background: #2ecc71; color: white; } /* Open-Call OU Call */
-        .action-orange { background: #f39c12; color: white; } /* 3-BET / 4-BET */
-        .action-purple { background: #9b59b6; color: white; } /* ALL-IN */
+        .action-blue { background: #3498db; color: white; }
+        .action-green { background: #2ecc71; color: white; }
+        .action-orange { background: #f39c12; color: white; }
+        .action-purple { background: #9b59b6; color: white; }
 
         .palette { display: flex; gap: 5px; margin: 15px 0; }
         .tool { flex: 1; padding: 12px 5px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; font-weight: bold; font-size: 10px; text-align: center; }
         .tool.active { border-color: white; }
         
+        .quick-presets button { border: none; border-radius: 4px; font-size: 11px; cursor: pointer; transition: opacity 0.2s; }
+        .quick-presets button:hover { opacity: 0.8; }
+
         #login-overlay { position: fixed; inset: 0; background: #121212; display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 15px; }
         input { padding: 12px; border-radius: 6px; border: 1px solid #333; width: 250px; background: #1e1e1e; color: white; }
         .status { font-size: 11px; color: #666; margin-top: 10px; text-align: center; }
@@ -42,7 +43,7 @@
         <h2>Poker Vault</h2>
         <input type="email" id="email" placeholder="Email">
         <input type="password" id="password" placeholder="Mot de passe">
-        <button onclick="signIn()" style="padding: 12px 250px; background: #3498db; border: none; color: white; border-radius: 6px; cursor: pointer; font-weight: bold;">Connexion</button>
+        <button onclick="signIn()" style="padding: 12px 100px; background: #3498db; border: none; color: white; border-radius: 6px; cursor: pointer; font-weight: bold;">Connexion</button>
     </div>
 
     <div class="container">
@@ -67,12 +68,11 @@
             </div>
 
             <div class="quick-presets" style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
-                <button onclick="applyPreset('RFI', 'BTN', 'ANY')" style="flex: 1.2; padding: 10px; background: #2980b9; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer;">🔥 RFI BTN</button>
-                
-                <button onclick="applyPreset('DEFENSE', 'BB', 'SB_LIMP')">🃏 BB vs SB LIMP</button>
-                <button onclick="applyPreset('DEFENSE', 'BB', 'BTN')" style="flex: 1; padding: 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d; border-radius: 4px; font-size: 11px; cursor: pointer;">🎯 BB vs BTN</button>
-                <button onclick="applyPreset('DEFENSE', 'SB', 'BTN')" style="flex: 1; padding: 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d; border-radius: 4px; font-size: 11px; cursor: pointer;">🎯 SB vs BTN</button>
-                <button onclick="applyPreset('DEFENSE', 'SB', 'CO')" style="flex: 1; padding: 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d; border-radius: 4px; font-size: 11px; cursor: pointer;">🎯 SB vs CO</button>
+                <button onclick="applyPreset('RFI', 'BTN', 'ANY')" style="flex: 1.2; padding: 10px; background: #2980b9; color: white; font-weight: bold;">🔥 RFI BTN</button>
+                <button onclick="applyPreset('DEFENSE', 'BB', 'SB_LIMP')" style="flex: 1; padding: 10px; background: #8e44ad; color: white;">🃏 BB vs SB LIMP</button>
+                <button onclick="applyPreset('DEFENSE', 'BB', 'BTN')" style="flex: 1; padding: 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d;">🎯 BB vs BTN</button>
+                <button onclick="applyPreset('DEFENSE', 'SB', 'BTN')" style="flex: 1; padding: 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d;">🎯 SB vs BTN</button>
+                <button onclick="applyPreset('DEFENSE', 'SB', 'CO')" style="flex: 1; padding: 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d;">🎯 SB vs CO</button>
             </div>
             
             <div style="display: flex; flex-direction: column; gap: 5px;">
@@ -92,23 +92,12 @@
             <div id="vsPosContainer" style="display: none; flex-direction: column; gap: 5px;">
                 <label style="font-size: 11px; color: #e74c3c; font-weight: bold;">VS OPEN DE :</label>
                 <select id="vsPosSelect" onchange="refreshData();">
-                    <option value="UTG">UTG</option>
-                    <option value="UTG+1">UTG+1</option>
-                    <option value="MP">MP</option>
-                    <option value="HJ">HJ</option>
-                    <option value="CO">CO</option>
-                    <option value="BTN">BTN</option>
-                    <option value="SB">SB</option>
-                </select>
+                    </select>
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button onclick="copyCurrentRange()" style="flex: 1; padding: 8px; background: #444; color: #fff; border: 1px solid #666; border-radius: 4px; font-size: 11px; cursor: pointer;">
-                    📋 Copier cette range
-                </button>
-                <button id="pasteBtn" onclick="pasteRange()" style="flex: 1; padding: 8px; background: #27ae60; color: #fff; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; display: none;">
-                    📥 Coller ici
-                </button>
+                <button onclick="copyCurrentRange()" style="flex: 1; padding: 8px; background: #444; color: #fff; border: 1px solid #666; border-radius: 4px; font-size: 11px; cursor: pointer;">📋 Copier</button>
+                <button id="pasteBtn" onclick="pasteRange()" style="flex: 1; padding: 8px; background: #27ae60; color: #fff; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; display: none;">📥 Coller</button>
             </div>
         </div>
 
@@ -122,43 +111,40 @@
 
         <div id="statsPanel" style="display: flex; gap: 10px; margin-bottom: 10px; width: 100%;">
             <div style="flex: 1; background: #2a2a2a; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid #3498db;">
-                <span style="display: block; font-size: 10px; color: #888; text-transform: uppercase;">Fréquence Jouée</span>
-                <span id="statVPIP" style="font-size: 18px; font-weight: bold; color: white;">0.0%</span>
+                <span style="display: block; font-size: 10px; color: #888;">VPIP</span>
+                <span id="statVPIP" style="font-size: 18px; font-weight: bold;">0.0%</span>
             </div>
             <div style="flex: 1; background: #2a2a2a; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid #e74c3c;">
-                <span style="display: block; font-size: 10px; color: #888; text-transform: uppercase;">Fréquence Aggro</span>
-                <span id="statPFR" style="font-size: 18px; font-weight: bold; color: white;">0.0%</span>
+                <span style="display: block; font-size: 10px; color: #888;">PFR</span>
+                <span id="statPFR" style="font-size: 18px; font-weight: bold;">0.0%</span>
             </div>
         </div>
 
         <div id="pokerGrid" class="grid"></div>
         <div id="status" class="status">Connecté</div>
-        <button onclick="resetCurrentRange()" style="flex: 0.5; padding: 10px; background: #c0392b; border: none; color: white; border-radius: 6px; font-size: 11px;">🗑️ Reset</button>
+        
+        <button id="btnStartQuiz" onclick="toggleQuiz()" style="margin-top: 20px; width: 100%; padding: 12px; background: #f1c40f; color: #000; font-weight: bold; border-radius: 6px; border: none; cursor: pointer;">🎓 TESTER MES CONNAISSANCES</button>
 
-        <div id="quizSection" style="display:none; background: #2c3e50; padding: 15px; border-radius: 10px; text-align: center; margin-top: 20px; transition: background 0.3s;">
+        <div id="quizSection" style="display:none; background: #2c3e50; padding: 15px; border-radius: 10px; text-align: center; margin-top: 20px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 12px; color: #bdc3c7;">
                 <span>Question : <b id="quizCount">1</b> / 20</span>
                 <span>Score : <b id="quizScore">0</b> / 20</span>
             </div>
-            
             <div style="width: 100%; height: 4px; background: #34495e; border-radius: 2px; margin-bottom: 15px;">
                 <div id="quizProgress" style="width: 0%; height: 100%; background: #f1c40f; border-radius: 2px; transition: width 0.3s;"></div>
             </div>
-        
             <h3 style="margin: 10px 0;">Action pour : <span id="quizHand" style="color: #f1c40f; font-size: 28px;">??</span></h3>
-            
             <div style="display: flex; gap: 5px; margin-top: 15px; flex-wrap: wrap;">
-                <button onclick="checkQuiz('fold')" style="flex:1; padding: 12px; background: #2a2a2a; color: white; border-radius: 5px; border: 1px solid #444;">FOLD</button>
+                <button onclick="checkQuiz('fold')" style="flex:1; padding: 12px; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 5px;">FOLD / CHECK</button>
                 <button onclick="checkQuiz('action-blue')" id="q-blue" style="flex:1; padding: 12px; background: #3498db; color: white; border-radius: 5px; border: none;">...</button>
                 <button onclick="checkQuiz('action-green')" id="q-green" style="flex:1; padding: 12px; background: #2ecc71; color: white; border-radius: 5px; border: none;">...</button>
                 <button onclick="checkQuiz('action-orange')" id="q-orange" style="flex:1; padding: 12px; background: #f39c12; color: white; border-radius: 5px; border: none;">...</button>
                 <button onclick="checkQuiz('action-purple')" id="q-purple" style="flex:1; padding: 12px; background: #9b59b6; color: white; border-radius: 5px; border: none;">...</button>
             </div>
-            
-            <button onclick="toggleQuiz()" style="margin-top: 20px; background: none; color: #bdc3c7; border: 1px solid #7f8c8d; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;">Abandonner le test</button>
+            <button onclick="toggleQuiz()" style="margin-top: 20px; background: none; color: #bdc3c7; border: 1px solid #7f8c8d; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;">Arrêter le Quiz</button>
         </div>
         
-        <button id="btnStartQuiz" onclick="toggleQuiz()" style="margin-top: 20px; width: 100%; padding: 12px; background: #f1c40f; color: #000; font-weight: bold; border-radius: 6px; border: none; cursor: pointer;">🎓 TESTER MES CONNAISSANCES</button>
+        <button onclick="resetCurrentRange()" style="margin-top: 10px; width: 100%; background: none; color: #666; border: none; font-size: 10px; cursor: pointer;">🗑️ Effacer cette range</button>
     </div>
 
     <script>
@@ -169,94 +155,18 @@
         const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
         let currentTab = 'RFI';
         let currentAction = 'fold';
+        let quizActive = false;
+        let score = 0;
+        let questionsDone = 0;
+        let currentQuizHand = "";
+        let quizCorrectAction = "";
 
         const labels = {
             'RFI': { blue: 'O-FOLD', green: 'O-CALL', orange: '4-BET', purple: 'ALL-IN' },
             'DEFENSE': { blue: 'FOLD', green: 'CALL', orange: '3-BET', purple: 'ALL-IN' }
         };
-        
-        function switchTab(tab) {
-            currentTab = tab;
-            
-            // 1. Gérer l'apparence des onglets
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
-            
-            // 2. AFFICHER / MASQUER le sélecteur d'adversaire (La partie qui te manque sûrement)
-            const vsContainer = document.getElementById('vsPosContainer');
-            if (vsContainer) {
-                vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none';
-            }
-        
-            // 3. Mettre à jour les labels des boutons (Palette & Quiz)
-            const btns = ['blue', 'green', 'orange', 'purple'];
-            btns.forEach(color => {
-                const label = labels[tab][color];
-                if (document.getElementById(`btn-${color}`)) {
-                    document.getElementById(`btn-${color}`).innerText = label;
-                }
-                if (document.getElementById(`q-${color}`)) {
-                    document.getElementById(`q-${color}`).innerText = label;
-                }
-            });
-        
-            // 4. Recharger les données
-            refreshData();
-        }
-        
-        async function refreshData() {
-            
-            const pos = document.getElementById('posSelect').value;
-            const stack = document.getElementById('stackSelect').value;
-            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
 
-            updateDynamicLabels(pos, vsPos);
-            
-            document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
-            document.getElementById('status').innerText = "Sync " + stack + "BB...";
-        
-            const { data } = await sbClient.from('ranges')
-                .select('*')
-                .eq('position', pos)
-                .eq('situation', currentTab)
-                .eq('vs_position', vsPos)
-                .eq('stack_depth', parseInt(stack)); // Filtrage par stack
-        
-            if (data) {
-                data.forEach(row => {
-                    const cell = document.querySelector(`[data-hand="${row.hand}"]`);
-                    if (cell) cell.className = 'cell ' + row.action;
-                });
-                //mise à jour des stats
-                updateStats(); 
-                
-                document.getElementById('status').innerText = `${pos} - ${stack}BB Sync`;
-            } else {
-                // Si aucune donnée n'est trouvée, on met quand même à jour (0.0%)
-                updateStats();
-            }
-        }
-        
-        async function updateHand(hand, action) {
-            const { data: { user } } = await sbClient.auth.getUser();
-            if (!user) return;
-        
-            const pos = document.getElementById('posSelect').value;
-            const stack = document.getElementById('stackSelect').value;
-            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
-        
-            await sbClient.from('ranges').upsert({ 
-                user_id: user.id, 
-                hand: hand, 
-                action: action, 
-                position: pos, 
-                situation: currentTab,
-                vs_position: vsPos,
-                stack_depth: parseInt(stack) // Sauvegarde du stack
-            }, { onConflict: 'user_id,hand,position,situation,vs_position,stack_depth' });
-        }
-
-        // Init Grille
+        // --- INITIALISATION GRILLE ---
         const grid = document.getElementById('pokerGrid');
         for (let i = 0; i < 13; i++) {
             for (let j = 0; j < 13; j++) {
@@ -266,183 +176,84 @@
                 cell.textContent = hand;
                 cell.dataset.hand = hand;
                 cell.onclick = () => {
+                    if(quizActive) return;
                     cell.className = 'cell ' + currentAction;
                     updateHand(hand, currentAction);
-                    //maj des stats
                     updateStats();
                 };
                 grid.appendChild(cell);
             }
         }
 
-        // Palette
-        document.querySelectorAll('.tool').forEach(tool => {
-            tool.addEventListener('click', () => {
-                document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
-                tool.classList.add('active');
-                currentAction = tool.dataset.action;
-            });
-        });
-
-        async function signIn() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const { error } = await sbClient.auth.signInWithPassword({ email, password });
-            if (error) alert("Erreur: " + error.message);
+        // --- NAVIGATION & DONNÉES ---
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            
+            const vsContainer = document.getElementById('vsPosContainer');
+            if (vsContainer) vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none';
+            
+            updateVsPosOptions();
+            refreshData();
         }
 
-        sbClient.auth.onAuthStateChange((event, session) => {
-            if (session) {
-                document.getElementById('login-overlay').style.display = 'none';
-                refreshData();
-            }
-        });
-        //fonction copier
-        let copiedRangeData = null;
-        let copiedSourceInfo = ""; // Pour afficher ce qu'on a en mémoire
-        
-        function copyCurrentRange() {
-            const cells = document.querySelectorAll('.cell');
-            let dataToCopy = [];
-            
-            cells.forEach(cell => {
-                const action = Array.from(cell.classList).find(cls => cls.startsWith('action-') || cls === 'fold');
-                if (action && action !== 'fold') {
-                    dataToCopy.push({ hand: cell.dataset.hand, action: action });
-                }
-            });
-        
-            if (dataToCopy.length === 0) {
-                alert("La range actuelle est vide.");
-                return;
-            }
-        
+        async function refreshData() {
             const pos = document.getElementById('posSelect').value;
             const stack = document.getElementById('stackSelect').value;
             const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
-        
-            copiedRangeData = dataToCopy;
-            copiedSourceInfo = `${pos} ${stack}BB ${currentTab === 'DEFENSE' ? 'vs ' + vsPos : '(RFI)'}`;
+
+            updateDynamicLabels(pos, vsPos);
             
-            document.getElementById('pasteBtn').style.display = 'block';
-            document.getElementById('status').innerText = "Copié : " + copiedSourceInfo;
-        }
-        //fonction coller
-        async function pasteRange() {
-            if (!copiedRangeData) return;
-        
-            const targetPos = document.getElementById('posSelect').value;
-            const targetStack = document.getElementById('stackSelect').value;
-            const targetVsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
-            const { data: { user } } = await sbClient.auth.getUser();
-        
-            const confirmMsg = `Coller la range de [${copiedSourceInfo}] \nVERS \n[${targetPos} ${targetStack}BB ${currentTab === 'DEFENSE' ? 'vs ' + targetVsPos : '(RFI)'}] ?`;
-            
-            if (!confirm(confirmMsg)) return;
-        
-            document.getElementById('status').innerText = "Collage en cours...";
-        
-            const upsertData = copiedRangeData.map(item => ({
-                user_id: user.id,
-                hand: item.hand,
-                action: item.action,
-                position: targetPos,
-                situation: currentTab,
-                vs_position: targetVsPos,
-                stack_depth: parseInt(targetStack)
-            }));
-        
-            const { error } = await sbClient.from('ranges').upsert(upsertData, { 
-                onConflict: 'user_id,hand,position,situation,vs_position,stack_depth' 
-            });
-        
-            if (error) {
-                alert("Erreur : " + error.message);
-            } else {
-                document.getElementById('status').innerText = "Collage réussi !";
-                refreshData();
-            }
-        }
-        //fonction maj stats
-        function updateStats() {
-            const cells = document.querySelectorAll('.cell');
-            let totalCombos = 0, playedCombos = 0, aggroCombos = 0;
-        
-            cells.forEach(cell => {
-                const hand = cell.dataset.hand;
-                let weight = hand.includes('s') ? 4 : (hand.includes('o') ? 12 : 6);
-                totalCombos += weight;
-        
-                const hasClass = (c) => cell.classList.contains(c);
-        
-                // VPIP : Toutes les couleurs sauf fold
-                if (hasClass('action-blue') || hasClass('action-green') || 
-                    hasClass('action-orange') || hasClass('action-purple')) {
-                    playedCombos += weight;
-                }
-                
-                // PFR : Orange (3/4-bet) et Purple (All-in)
-                if (hasClass('action-orange') || hasClass('action-purple')) {
-                    aggroCombos += weight;
-                }
-            });
-        
-            document.getElementById('statVPIP').innerText = ((playedCombos / totalCombos) * 100).toFixed(1) + "%";
-            document.getElementById('statPFR').innerText = ((aggroCombos / totalCombos) * 100).toFixed(1) + "%";
-        }
-        //fonction reset
-        async function resetCurrentRange() {
-            const pos = document.getElementById('posSelect').value;
-            const stack = document.getElementById('stackSelect').value;
-            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
-        
-            if (!confirm(`Voulez-vous vraiment effacer TOUTE la range ${pos} ${stack}BB ?`)) return;
-        
-            const { data: { user } } = await sbClient.auth.getUser();
-            
-            // Suppression en base de données
-            const { error } = await sbClient.from('ranges')
-                .delete()
-                .eq('user_id', user.id)
+            document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
+            document.getElementById('status').innerText = "Sync...";
+
+            const { data } = await sbClient.from('ranges')
+                .select('*')
                 .eq('position', pos)
                 .eq('situation', currentTab)
                 .eq('vs_position', vsPos)
                 .eq('stack_depth', parseInt(stack));
-        
-            if (error) {
-                alert("Erreur lors du reset : " + error.message);
-            } else {
-                document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
-                updateStats();
-                document.getElementById('status').innerText = "Range effacée.";
+
+            if (data) {
+                data.forEach(row => {
+                    const cell = document.querySelector(`[data-hand="${row.hand}"]`);
+                    if (cell) cell.className = 'cell ' + row.action;
+                });
             }
+            updateStats();
+            document.getElementById('status').innerText = `${pos} ${stack}BB Prêt`;
         }
-        //Quiz
-        let quizActive = false;
-        let currentQuizHand = "";
-        let quizCorrectAction = "";
-        let questionsDone = 0;
-        let score = 0;
-        
+
+        function updateDynamicLabels(pos, vsPos) {
+            const btns = ['blue', 'green', 'orange', 'purple'];
+            
+            if (currentTab === 'DEFENSE' && pos === 'BB' && vsPos === 'SB_LIMP') {
+                document.getElementById('btn-blue').innerText = "CHECK";
+                document.getElementById('btn-green').innerText = "ISO 3.5x";
+                document.getElementById('btn-orange').innerText = "ISO 6.5x";
+                document.getElementById('btn-purple').innerText = "ISO AI";
+            } else {
+                btns.forEach(color => {
+                    document.getElementById(`btn-${color}`).innerText = labels[currentTab][color];
+                });
+            }
+            syncQuizLabels();
+        }
+
+        // --- QUIZ LOGIQUE ---
         function toggleQuiz() {
             quizActive = !quizActive;
             const quizDiv = document.getElementById('quizSection');
             const gridDiv = document.getElementById('pokerGrid');
             const btnStart = document.getElementById('btnStartQuiz');
-            
+
             if (quizActive) {
-                // Reset des stats du quiz
-                questionsDone = 0;
-                score = 0;
-                updateQuizUI();
-                
-                document.getElementById('q-blue').innerText = labels[currentTab].blue;
-                document.getElementById('q-green').innerText = labels[currentTab].green;
-                document.getElementById('q-red').innerText = labels[currentTab].red;
-                
+                score = 0; questionsDone = 0;
                 quizDiv.style.display = 'block';
-                gridDiv.style.display = 'none'; // On cache complètement la grille
+                gridDiv.style.display = 'none';
                 btnStart.style.display = 'none';
+                syncQuizLabels();
                 nextQuizHand();
             } else {
                 quizDiv.style.display = 'none';
@@ -450,174 +261,147 @@
                 btnStart.style.display = 'block';
             }
         }
-        
-        function updateQuizUI() {
-            document.getElementById('quizCount').innerText = questionsDone + 1;
-            document.getElementById('quizScore').innerText = score;
-            const progress = (questionsDone / 20) * 100;
-            document.getElementById('quizProgress').style.width = progress + "%";
-        }
-        
-        function nextQuizHand() {
-            if (questionsDone >= 20) {
-                finishQuiz();
-                return;
-            }
 
-            // 1. Synchroniser les labels (Important pour le mode BB vs SB LIMP)
-            syncQuizLabels();
+        function syncQuizLabels() {
+            ['blue', 'green', 'orange', 'purple'].forEach(color => {
+                const paletteText = document.getElementById(`btn-${color}`).innerText;
+                const quizBtn = document.getElementById(`q-${color}`);
+                if(quizBtn) quizBtn.innerText = paletteText;
+            });
+        }
+
+        function nextQuizHand() {
+            if (questionsDone >= 20) { finishQuiz(); return; }
             
-            const allHands = [];
-            document.querySelectorAll('.cell').forEach(c => allHands.push(c.dataset.hand));
-            
+            const allHands = Array.from(document.querySelectorAll('.cell')).map(c => c.dataset.hand);
             currentQuizHand = allHands[Math.floor(Math.random() * allHands.length)];
             document.getElementById('quizHand').innerText = currentQuizHand;
             
             const cell = document.querySelector(`[data-hand="${currentQuizHand}"]`);
             quizCorrectAction = Array.from(cell.classList).find(cls => cls.startsWith('action-') || cls === 'fold') || 'fold';
             
-            updateQuizUI();
+            document.getElementById('quizCount').innerText = questionsDone + 1;
+            document.getElementById('quizScore').innerText = score;
+            document.getElementById('quizProgress').style.width = (questionsDone / 20 * 100) + "%";
         }
-        
+
         function checkQuiz(userAction) {
             const quizBox = document.getElementById('quizSection');
-            
             if (userAction === quizCorrectAction) {
                 score++;
-                quizBox.style.background = "#1e8449"; // Vert Succès
+                quizBox.style.background = "#1e8449";
             } else {
-                quizBox.style.background = "#922b21"; // Rouge Erreur
-                
-                // --- AMÉLIORATION DU MESSAGE D'ERREUR ---
-                // On récupère le texte du bouton correspondant à la bonne couleur
-                const colorKey = quizCorrectAction.replace('action-', ''); // ex: 'blue'
-                const correctLabel = document.getElementById(`btn-${colorKey}`).innerText;
-                
-                alert(`Faux ! Pour ${currentQuizHand}, l'action GTO était : ${correctLabel}`);
-                // ----------------------------------------
+                quizBox.style.background = "#922b21";
+                const colorKey = quizCorrectAction.replace('action-', '');
+                const correctLabel = (colorKey === 'fold') ? "FOLD / CHECK" : document.getElementById(`btn-${colorKey}`).innerText;
+                alert(`Faux ! Pour ${currentQuizHand}, l'action était : ${correctLabel}`);
             }
-        
             questionsDone++;
-            
             setTimeout(() => {
-                quizBox.style.background = "#2c3e50"; // Retour couleur sombre
+                quizBox.style.background = "#2c3e50";
                 nextQuizHand();
             }, 200);
         }
-        
+
         function finishQuiz() {
-            let appreciation = "";
-            if (score === 20) appreciation = "Parfait ! Tu maîtrises cette range.";
-            else if (score >= 15) appreciation = "Très bien, encore un petit effort.";
-            else if (score >= 10) appreciation = "Moyen, relis tes ranges.";
-            else appreciation = "Aïe... il faut retourner bosser la théorie !";
-        
-            alert(`Terminé ! \nScore : ${score} / 20 \n\n${appreciation}`);
+            alert(`Test terminé ! Score : ${score} / 20`);
             toggleQuiz();
         }
 
-        //gestion des positions dynamique
+        // --- HELPER FUNCTIONS (Copy, Stats, Presets, DB) ---
         const POSITION_ORDER = ["UTG", "UTG+1", "MP", "HJ", "CO", "BTN", "SB", "BB"];
-
+        
         function updateVsPosOptions() {
             const myPos = document.getElementById('posSelect').value;
             const vsSelect = document.getElementById('vsPosSelect');
-            
-            // 1. On sauvegarde la valeur qui était sélectionnée avant le refresh
-            const previousSelection = vsSelect.value;
             const myIndex = POSITION_ORDER.indexOf(myPos);
-        
-            // 2. On reconstruit la liste proprement
-            let newOptionsHTML = "";
+            let html = "";
             for (let i = 0; i < myIndex; i++) {
                 if (POSITION_ORDER[i] === "SB") {
-                newOptionsHTML += `<option value="SB">SB (vs Open)</option>`;
-                newOptionsHTML += `<option value="SB_LIMP">SB (vs Limp)</option>`;
-            } else {
-                newOptionsHTML += `<option value="${POSITION_ORDER[i]}">${POSITION_ORDER[i]}</option>`;
-            }
-            }
-        
-            if (newOptionsHTML === "") {
-                newOptionsHTML = `<option value="NONE">N/A (RFI)</option>`;
-            }
-        
-            // 3. On ne met à jour le DOM que si le contenu a changé pour éviter de casser le focus
-            if (vsSelect.innerHTML !== newOptionsHTML) {
-                vsSelect.innerHTML = newOptionsHTML;
-                
-                // 4. On tente de remettre l'ancienne sélection si elle existe encore dans la nouvelle liste
-                const optionExists = Array.from(vsSelect.options).some(opt => opt.value === previousSelection);
-                if (optionExists) {
-                    vsSelect.value = previousSelection;
+                    html += `<option value="SB">SB (vs Open)</option><option value="SB_LIMP">SB (vs Limp)</option>`;
+                } else {
+                    html += `<option value="${POSITION_ORDER[i]}">${POSITION_ORDER[i]}</option>`;
                 }
             }
+            vsSelect.innerHTML = html || `<option value="ANY">ANY</option>`;
         }
 
-        //raccourcis
         function applyPreset(situation, myPos, vsPos) {
-            // 1. Changer l'onglet (Open ou Défense)
             switchTab(situation);
-        
-            // 2. Changer ma position
-            const posSelect = document.getElementById('posSelect');
-            posSelect.value = myPos;
-        
-            // 3. Mettre à jour la liste des adversaires possibles (crucial pour que vsPos existe)
+            document.getElementById('posSelect').value = myPos;
             updateVsPosOptions();
-        
-            // 4. Sélectionner l'adversaire
-            const vsPosSelect = document.getElementById('vsPosSelect');
-            if (vsPosSelect) {
-                vsPosSelect.value = vsPos;
-            }
-        
-            // 5. Rafraîchir la grille avec ces nouveaux paramètres
+            document.getElementById('vsPosSelect').value = vsPos;
             refreshData();
-            
-            // Petit feedback visuel
-            console.log(`Preset appliqué : ${myPos} vs ${vsPos} (${situation})`);
         }
 
-        // Définis la fonction de mise à jour des labels
-        function updateDynamicLabels(pos, vsPos) {
-            const btnBlue = document.getElementById('btn-blue');
-            const btnGreen = document.getElementById('btn-green');
-            const btnOrange = document.getElementById('btn-orange');
-            const btnPurple = document.getElementById('btn-purple');
-        
-            // Cas spécifique : BB contre un Limp de la SB
-            if (currentTab === 'DEFENSE' && pos === 'BB' && vsPos === 'SB_LIMP') {
-                btnBlue.innerText = "CHECK";        // On ne fold jamais en BB vs Limp
-                btnGreen.innerText = "ISO 3,5x";      // Relance standard
-                btnOrange.innerText = "ISO 6,5x";  // Relance forte/Polarisée
-                btnPurple.innerText = "ISO AI";     // All-in direct
-            } else {
-                // Retour aux labels par défaut définis dans ton objet 'labels'
-                btnBlue.innerText = labels[currentTab].blue;
-                btnGreen.innerText = labels[currentTab].green;
-                btnOrange.innerText = labels[currentTab].orange;
-                btnPurple.innerText = labels[currentTab].purple;
-            }
+        async function updateHand(hand, action) {
+            const { data: { user } } = await sbClient.auth.getUser();
+            if (!user) return;
+            const pos = document.getElementById('posSelect').value;
+            const stack = document.getElementById('stackSelect').value;
+            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
+            await sbClient.from('ranges').upsert({ user_id: user.id, hand, action, position: pos, situation: currentTab, vs_position: vsPos, stack_depth: parseInt(stack) });
         }
-        //synchronisation des labels pour le quiz
-        function syncQuizLabels() {
-            // On récupère les textes actuels des boutons de la palette (qui sont déjà mis à jour par updateDynamicLabels)
-            const labelBlue = document.getElementById('btn-blue').innerText;
-            const labelGreen = document.getElementById('btn-green').innerText;
-            const labelOrange = document.getElementById('btn-orange').innerText;
-            const labelPurple = document.getElementById('btn-purple').innerText;
+
+        function updateStats() {
+            const cells = document.querySelectorAll('.cell');
+            let total = 0, played = 0, aggro = 0;
+            cells.forEach(c => {
+                const h = c.dataset.hand;
+                let w = h.includes('s') ? 4 : (h.includes('o') ? 12 : 6);
+                total += w;
+                if (!c.classList.contains('fold')) played += w;
+                if (c.classList.contains('action-orange') || c.classList.contains('action-purple')) aggro += w;
+            });
+            document.getElementById('statVPIP').innerText = (played/total*100).toFixed(1) + "%";
+            document.getElementById('statPFR').innerText = (aggro/total*100).toFixed(1) + "%";
+        }
+
+        async function signIn() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { error } = await sbClient.auth.signInWithPassword({ email, password });
+            if (error) alert(error.message);
+        }
+
+        sbClient.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                document.getElementById('login-overlay').style.display = 'none';
+                updateVsPosOptions();
+                refreshData();
+            }
+        });
+
+        // Palette click
+        document.querySelectorAll('.tool').forEach(tool => {
+            tool.addEventListener('click', () => {
+                document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
+                tool.classList.add('active');
+                currentAction = tool.dataset.action;
+            });
+        });
         
-            // On les applique aux boutons du Quiz
-            const qBlue = document.getElementById('q-blue');
-            const qGreen = document.getElementById('q-green');
-            const qOrange = document.getElementById('q-orange');
-            const qPurple = document.getElementById('q-purple');
-        
-            if (qBlue) qBlue.innerText = labelBlue;
-            if (qGreen) qGreen.innerText = labelGreen;
-            if (qOrange) qOrange.innerText = labelOrange;
-            if (qPurple) qPurple.innerText = labelPurple;
+        // Copier/Coller (simplifié)
+        let copiedData = null;
+        function copyCurrentRange() {
+            copiedData = Array.from(document.querySelectorAll('.cell'))
+                .filter(c => !c.classList.contains('fold'))
+                .map(c => ({ hand: c.dataset.hand, action: Array.from(c.classList).find(cls => cls.startsWith('action-')) }));
+            document.getElementById('pasteBtn').style.display = 'block';
+            document.getElementById('status').innerText = "Copié !";
+        }
+        async function pasteRange() {
+            if(!copiedData || !confirm("Écraser la range actuelle ?")) return;
+            const { data: { user } } = await sbClient.auth.getUser();
+            const upserts = copiedData.map(d => ({
+                user_id: user.id, hand: d.hand, action: d.action,
+                position: document.getElementById('posSelect').value,
+                situation: currentTab,
+                vs_position: (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY',
+                stack_depth: parseInt(document.getElementById('stackSelect').value)
+            }));
+            await sbClient.from('ranges').upsert(upserts);
+            refreshData();
         }
     </script>
 </body>
