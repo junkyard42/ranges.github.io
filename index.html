@@ -20,12 +20,12 @@
         .grid { display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; }
         .cell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; cursor: pointer; border-radius: 2px; border: 1px solid rgba(255,255,255,0.03); }
         
+        /* Couleurs */
         .fold { background: #2a2a2a; color: #555; }
         .action-blue { background: #3498db; color: white; }
         .action-green { background: #2ecc71; color: white; }
         .action-orange { background: #f39c12; color: white; }
         .action-purple { background: #9b59b6; color: white; }
-
         .action-l-fold { background: #34495e; color: white; }
         .action-l-call { background: #16a085; color: white; }
         .action-l-3bet { background: #d35400; color: white; }
@@ -35,8 +35,14 @@
         .action-o-4bet { background: #e67e22; color: white; }
         .action-o-ai { background: #8e44ad; color: white; }
 
-        .palette { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; margin: 15px 0; }
-        .palette.sb-mode { grid-template-columns: repeat(3, 1fr); }
+        /* Palette adaptative */
+        .palette { margin: 15px 0; gap: 5px; }
+        .palette.std-mode { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+        .palette.std-mode::-webkit-scrollbar { display: none; }
+        .palette.std-mode .tool { flex: 1; min-width: 70px; }
+        
+        .palette.sb-mode { display: grid; grid-template-columns: repeat(3, 1fr); }
+
         .tool { padding: 10px 5px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; font-weight: bold; font-size: 9px; text-align: center; }
         .tool.active { border-color: white; }
         
@@ -103,7 +109,7 @@
             </div>
         </div>
 
-        <div class="palette" id="palette"></div>
+        <div id="palette" class="palette"></div>
 
         <div id="statsPanel" style="display: flex; gap: 10px; margin-bottom: 10px; width: 100%;">
             <div style="flex: 1; background: #2a2a2a; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid #3498db;">
@@ -126,10 +132,9 @@
                 <span>Question : <b id="quizCount">1</b> / 20</span>
                 <span>Score : <b id="quizScore">0</b> / 20</span>
             </div>
-            <div style="width: 100%; height: 4px; background: #34495e; border-radius: 2px; margin-bottom: 15px;">
-                <div id="quizProgress" style="width: 0%; height: 100%; background: #f1c40f; border-radius: 2px; transition: width 0.3s;"></div>
+            <div id="quizHandContainer">
+                <h3 style="margin: 10px 0;">Action pour : <span id="quizHand" style="color: #f1c40f; font-size: 28px;">??</span></h3>
             </div>
-            <h3 style="margin: 10px 0;">Action pour : <span id="quizHand" style="color: #f1c40f; font-size: 28px;">??</span></h3>
             <div id="quizOptions" class="palette"></div>
             <button onclick="toggleQuiz()" style="margin-top: 20px; background: none; color: #bdc3c7; border: 1px solid #7f8c8d; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;">Arrêter le Quiz</button>
         </div>
@@ -139,7 +144,6 @@
 
     <script>
         const sbClient = supabase.createClient(S_URL, S_KEY);
-
         const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
         let currentTab = 'RFI', currentAction = 'fold', quizActive = false, score = 0, questionsDone = 0, quizCorrectAction = "";
 
@@ -177,9 +181,12 @@
             const pos = document.getElementById('posSelect').value;
             const container = document.getElementById(targetId);
             container.innerHTML = '';
+            
             const isSBMode = (pos === 'SB' && currentTab === 'RFI');
             const list = isSBMode ? actionsSB : actionsStd;
-            container.className = isSBMode ? 'palette sb-mode' : 'palette';
+            
+            // Appliquer la classe CSS correspondante
+            container.className = isSBMode ? 'palette sb-mode' : 'palette std-mode';
 
             list.forEach(a => {
                 const btn = document.createElement('div');
@@ -253,7 +260,6 @@
             quizCorrectAction = Array.from(cell.classList).find(cls => cls.startsWith('action-') || cls === 'fold') || 'fold';
             document.getElementById('quizCount').innerText = questionsDone + 1;
             document.getElementById('quizScore').innerText = score;
-            document.getElementById('quizProgress').style.width = (questionsDone / 20 * 100) + "%";
         }
 
         function checkQuiz(userAction) {
