@@ -361,8 +361,39 @@
 
         async function updateHand(hand, action) {
             const { data: { user } } = await sbClient.auth.getUser();
+            if (!user) return;
+        
+            const pos = document.getElementById('posSelect').value;
+            const situation = currentTab;
             const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
-            await sbClient.from('ranges').upsert({ user_id: user.id, hand, action, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: vsPos, stack_depth: parseInt(document.getElementById('stackSelect').value), is_finalized: isCurrentRangeFinalized });
+            const stack = parseInt(document.getElementById('stackSelect').value);
+        
+            // ÉTAPE 1 : On supprime systématiquement l'entrée existante pour cette main précise
+            // Cela règle le problème du "Fold" ET le problème du changement de couleur (ex: Bleu -> Vert)
+            await sbClient.from('ranges')
+                .delete()
+                .eq('user_id', user.id)
+                .eq('hand', hand)
+                .eq('position', pos)
+                .eq('situation', situation)
+                .eq('vs_position', vsPos)
+                .eq('stack_depth', stack);
+        
+            // ÉTAPE 2 : Si la nouvelle action n'est PAS un "fold", on insère la nouvelle ligne
+            if (action !== 'fold') {
+                const { error } = await sbClient.from('ranges').insert({ 
+                    user_id: user.id, 
+                    hand: hand, 
+                    action: action, 
+                    position: pos, 
+                    situation: situation, 
+                    vs_position: vsPos, 
+                    stack_depth: stack, 
+                    is_finalized: isCurrentRangeFinalized 
+                });
+                
+                if (error) console.error("Erreur insertion:", error);
+            }
         }
 
         async function toggleFinalize() {
