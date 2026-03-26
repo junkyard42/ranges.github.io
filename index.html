@@ -60,8 +60,47 @@
         .io-section { margin-top: 15px; padding: 10px; background: #252525; border-radius: 8px; border: 1px solid #333; }
         .io-area { width: 100%; height: 50px; background: #121212; color: #2ecc71; border: 1px solid #444; border-radius: 4px; font-family: monospace; font-size: 11px; padding: 5px; box-sizing: border-box; resize: none; margin-bottom: 8px; }
         .quick-presets { display: flex; gap: 6px; margin-bottom: 15px; width: 100%; }
-        .quick-presets button { flex: 1; border: none; border-radius: 6px; font-size: 10px; cursor: pointer; padding: 10px 5px; white-space: nowrap; font-weight: bold; transition: transform 0.1s; }
         .quick-presets button.selected-preset { box-shadow: inset 0 0 0 4px #f1c40f !important; transform: scale(1.02); filter: brightness(1.2); }
+
+        /* Styles pour les nouveaux favoris dynamiques */
+        .quick-presets button {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+        }
+        
+        .delete-btn {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 1px solid #1e1e1e;
+            font-weight: bold;
+        }
+        
+        #btnAddPreset {
+            background: #444;
+            color: #aaa;
+            border: 2px dashed #666;
+            transition: 0.2s;
+        }
+        
+        #btnAddPreset:hover {
+            background: #555;
+            color: #fff;
+            border-color: #888;
+        }
         
         #login-overlay { position: fixed; inset: 0; background: #121212; display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 15px; }
         input { padding: 12px; border-radius: 6px; border: 1px solid #333; width: 250px; background: #1e1e1e; color: white; }
@@ -90,10 +129,7 @@
             </div>
 
             <div class="quick-presets" id="presetGroup">
-                <button onclick="applyPreset('RFI', 'BTN', 'ANY', this)" style="background: #2e86de; color: white;">🔥 RFI BTN</button>
-                <button onclick="applyPreset('RFI', 'SB', 'ANY', this)" style="background: #d35400; color: white;">🔥 RFI SB</button>
-                <button onclick="applyPreset('DEFENSE', 'BB', 'BTN', this)" style="background: #28b463; color: white;">🎯 BB vs BTN</button>
-                <button onclick="applyPreset('PUSH', 'SB', 'ANY', this)" style="background: #c0392b; color: white;">⚡ PUSH SB</button>
+                <button id="btnAddPreset" onclick="addCurrentAsPreset()" title="Ajouter la configuration actuelle">+ Favori</button>
             </div>
             
             <select id="posSelect" onchange="clearPresetStyle(); updateVsPosOptions(); refreshData();">
@@ -336,25 +372,94 @@
             });
         }
 
-        function applyPreset(sit, myPos, vsPos, btnElement) {
-            // On nettoie d'abord tout style existant
-            clearPresetStyle();
+        let userPresets = [];
+
+        // Charger les favoris depuis Supabase
+        async function loadPresets() {
+            const { data: { user } } = await sbClient.auth.getUser();
+            if (!user) return;
+        
+            const { data, error } = await sbClient.from('presets')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('order', { ascending: true });
             
+            if (!error) {
+                userPresets = data;
+                renderPresets();
+            }
+        }
+        
+        // Afficher les boutons
+        function renderPresets() {
+            const container = document.getElementById('presetGroup');
+            const addButton = document.getElementById('btnAddPreset');
+            
+            // On supprime les anciens boutons de favoris (on garde le bouton +)
+            container.querySelectorAll('.dynamic-preset').forEach(btn => btn.remove());
+        
+            userPresets.forEach(p => {
+                const btn = document.createElement('button');
+                btn.className = 'dynamic-preset';
+                // Couleur selon la situation pour s'y retrouver
+                btn.style.background = p.situation === 'RFI' ? '#2e86de' : (p.situation === 'DEFENSE' ? '#28b463' : '#c0392b');
+                btn.style.color = 'white';
+                btn.innerHTML = `${p.label} <span class="delete-btn" onclick="deletePreset('${p.id}', event)">×</span>`;
+                
+                btn.onclick = () => applyPreset(p.situation, p.my_pos, p.vs_pos, btn);
+                
+                // Insérer avant le bouton "+"
+                container.insertBefore(btn, addButton);
+            });
+        
+            // Afficher le bouton "+" uniquement s'il y a moins de 4 favoris
+            addButton.style.display = userPresets.length >= 4 ? 'none' : 'block';
+        }
+        
+        // Ajouter le favori actuel
+        async function addCurrentAsPreset() {
+            const label = prompt("Nom du favori (ex: RFI BTN) :");
+            if (!label || label.trim() === "") return;
+        
+            const { data: { user } } = await sbClient.auth.getUser();
+            const newPreset = {
+                user_id: user.id,
+                label: label.substring(0, 12), // Limite pour l'affichage
+                situation: currentTab,
+                my_pos: document.getElementById('posSelect').value,
+                vs_pos: (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY',
+                order: userPresets.length
+            };
+        
+            const { error } = await sbClient.from('presets').insert([newPreset]);
+            if (error) {
+                alert("Erreur lors de l'ajout");
+            } else {
+                await loadPresets();
+            }
+        }
+        
+        // Supprimer un favori
+        async function deletePreset(id, event) {
+            event.stopPropagation(); // Pour ne pas déclencher le clic sur le bouton
+            if (!confirm("Supprimer ce favori ?")) return;
+            
+            const { error } = await sbClient.from('presets').delete().eq('id', id);
+            if (!error) await loadPresets();
+        }
+        
+        // Modifier ta fonction applyPreset existante pour plus de flexibilité
+        function applyPreset(sit, myPos, vsPos, btnElement) {
+            clearPresetStyle();
             document.getElementById('posSelect').value = myPos;
             updateVsPosOptions(); 
-            
-            // On passe skipRefresh à true pour éviter un double appel à refreshData
             switchTab(sit, true); 
         
-            if (btnElement) {
-                btnElement.classList.add('selected-preset');
-            }
+            if (btnElement) btnElement.classList.add('selected-preset');
         
             setTimeout(() => {
-                if (vsPos !== 'ANY') {
-                    const vsSelect = document.getElementById('vsPosSelect');
-                    if (vsSelect) vsSelect.value = vsPos;
-                }
+                const vsSelect = document.getElementById('vsPosSelect');
+                if (vsSelect && vsPos !== 'ANY') vsSelect.value = vsPos;
                 refreshData();
             }, 50);
         }
@@ -509,19 +614,30 @@
 
         sbClient.auth.onAuthStateChange((event, session) => { 
             if (session) { 
+                // 1. On cache le login
                 document.getElementById('login-overlay').style.display = 'none'; 
+                
+                // 2. On charge les nouveaux favoris dynamiques
+                loadPresets(); 
+        
+                // 3. On restaure l'état précédent (ton code existant, bien conservé)
                 const savedState = localStorage.getItem('poker_pro_state');
                 if (savedState) {
                     const state = JSON.parse(savedState);
                     switchTab(state.tab, true); 
                     document.getElementById('posSelect').value = state.pos;
                     updateVsPosOptions();
+                    
                     setTimeout(() => {
                         document.getElementById('stackSelect').value = state.stack;
-                        if (state.tab === 'DEFENSE' && document.getElementById('vsPosSelect')) document.getElementById('vsPosSelect').value = state.vsPos;
+                        if (state.tab === 'DEFENSE' && document.getElementById('vsPosSelect')) {
+                            document.getElementById('vsPosSelect').value = state.vsPos;
+                        }
                         refreshData();
                     }, 100);
-                } else switchTab('RFI'); 
+                } else {
+                    switchTab('RFI'); 
+                }
             } 
         });
     </script>
