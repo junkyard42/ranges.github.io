@@ -298,18 +298,32 @@
         function switchTab(tab, skipRefresh = false) {
             clearPresetStyle(); 
             currentTab = tab;
+            
+            // Mise à jour visuelle des onglets
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.add('active');
             
             const s = document.getElementById('stackSelect');
-            const vsContainer = document.getElementById('vsPosContainer'); // On cible le container du label + select
+            const vsContainer = document.getElementById('vsPosContainer');
         
             if (tab === 'PUSH') {
+                // Paliers spécifiques au mode Push or Fold (1 à 15 BB)
                 s.innerHTML = Array.from({length:15}, (_,i)=>`<option value="${15-i}">${15-i} BB</option>`).join('');
-                vsContainer.style.display = 'none'; // Cache tout le bloc
+                vsContainer.style.display = 'none';
             } else {
-                s.innerHTML = `<option value="100">100 BB</option><option value="80">80 BB</option><option value="60">60 BB</option><option value="40">40 BB</option><option value="20">20 BB</option>`;
-                vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none'; // Affiche en flex pour garder l'alignement colonne
+                // Restauration de tes paliers précis pour RFI et DEFENSE
+                s.innerHTML = `
+                    <option value="100">100 BB</option>
+                    <option value="80">80 BB</option>
+                    <option value="60">60 BB</option>
+                    <option value="40">40 BB</option>
+                    <option value="30">30 BB</option>
+                    <option value="20">20 BB</option>
+                    <option value="14">14 BB</option>
+                    <option value="10">10 BB</option>
+                `;
+                // Affichage du label "Vs Open de" uniquement en mode DEFENSE
+                vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none';
             }
             
             updateVsPosOptions(); 
