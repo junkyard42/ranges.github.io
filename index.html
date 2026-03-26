@@ -21,7 +21,21 @@
         .grid { display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; }
         .cell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; cursor: pointer; border-radius: 2px; border: 1px solid rgba(255,255,255,0.03); transition: background 0.1s; }
 
-        /* Couleurs Actions */
+        /* Animation flash améliorée pour ne pas confondre avec les couleurs d'action */
+        .quiz-flash-correct { 
+            box-shadow: 0 0 15px #2ecc71, inset 0 0 10px #2ecc71 !important; 
+            border: 2px solid white !important;
+            transform: scale(1.05);
+            z-index: 10;
+        }
+        
+        .quiz-flash-wrong { 
+            box-shadow: 0 0 15px #e74c3c, inset 0 0 10px #e74c3c !important; 
+            border: 2px solid white !important;
+            opacity: 0.8;
+        }
+        
+        /* --- COULEURS --- */
         .fold { background: #2a2a2a; color: #555; }
         .action-blue { background: #3498db; color: white; }
         .action-green { background: #2ecc71; color: white; }
@@ -42,17 +56,13 @@
         .palette.sb-mode { display: grid; grid-template-columns: repeat(3, 1fr); }
         .tool { padding: 10px 5px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; font-weight: bold; font-size: 9px; text-align: center; }
         .tool.active { border-color: white; }
-
-        /* ZONE FAVORIS DYNAMIQUE */
-        .quick-presets { display: flex; gap: 6px; margin-bottom: 15px; width: 100%; overflow-x: auto; padding-bottom: 5px; }
-        .quick-presets button { position: relative; flex: 1; min-width: 85px; border: none; border-radius: 6px; font-size: 10px; cursor: pointer; padding: 10px 5px; white-space: nowrap; font-weight: bold; color: white; transition: transform 0.1s; }
-        .quick-presets button.selected-preset { box-shadow: inset 0 0 0 4px #f1c40f !important; transform: scale(1.02); }
-        #btnAddPreset { background: #444; color: #aaa; border: 2px dashed #666; min-width: 40px; flex: 0; }
-        .delete-btn { position: absolute; top: -5px; right: -5px; background: #e74c3c; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #1e1e1e; font-weight: bold; z-index: 10; visibility: hidden; }
-        .quick-presets button:hover .delete-btn { visibility: visible; }
-
+        
         .io-section { margin-top: 15px; padding: 10px; background: #252525; border-radius: 8px; border: 1px solid #333; }
         .io-area { width: 100%; height: 50px; background: #121212; color: #2ecc71; border: 1px solid #444; border-radius: 4px; font-family: monospace; font-size: 11px; padding: 5px; box-sizing: border-box; resize: none; margin-bottom: 8px; }
+        .quick-presets { display: flex; gap: 6px; margin-bottom: 15px; width: 100%; }
+        .quick-presets button { flex: 1; border: none; border-radius: 6px; font-size: 10px; cursor: pointer; padding: 10px 5px; white-space: nowrap; font-weight: bold; transition: transform 0.1s; }
+        .quick-presets button.selected-preset { box-shadow: inset 0 0 0 4px #f1c40f !important; transform: scale(1.02); filter: brightness(1.2); }
+        
         #login-overlay { position: fixed; inset: 0; background: #121212; display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 15px; }
         input { padding: 12px; border-radius: 6px; border: 1px solid #333; width: 250px; background: #1e1e1e; color: white; }
     </style>
@@ -74,10 +84,16 @@
         </div>
 
         <div class="controls">
-            <select id="stackSelect" onchange="clearPresetStyle(); refreshData()"></select>
-            
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <label style="font-size: 11px; color: #f39c12; font-weight: bold;">TAILLE DU STACK</label>
+                <select id="stackSelect" onchange="clearPresetStyle(); refreshData()"></select>
+            </div>
+
             <div class="quick-presets" id="presetGroup">
-                <button id="btnAddPreset" onclick="addCurrentAsPreset()">+</button>
+                <button onclick="applyPreset('RFI', 'BTN', 'ANY', this)" style="background: #2e86de; color: white;">🔥 RFI BTN</button>
+                <button onclick="applyPreset('RFI', 'SB', 'ANY', this)" style="background: #d35400; color: white;">🔥 RFI SB</button>
+                <button onclick="applyPreset('DEFENSE', 'BB', 'BTN', this)" style="background: #28b463; color: white;">🎯 BB vs BTN</button>
+                <button onclick="applyPreset('PUSH', 'SB', 'ANY', this)" style="background: #c0392b; color: white;">⚡ PUSH SB</button>
             </div>
             
             <select id="posSelect" onchange="clearPresetStyle(); updateVsPosOptions(); refreshData();">
@@ -86,7 +102,13 @@
                 <option value="CO">CO</option><option value="BTN">BTN</option>
                 <option value="SB">SB</option><option value="BB">BB</option>
             </select>
+
             <div id="vsPosContainer" style="display: none;"><select id="vsPosSelect" onchange="refreshData();"></select></div>
+
+            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                <button onclick="copyCurrentRange()" style="flex: 1; padding: 8px; background: #444; color: #fff; border: 1px solid #666; border-radius: 4px; font-size: 11px; cursor: pointer;">📋 Copier</button>
+                <button id="pasteBtn" onclick="pasteRange()" style="flex: 1; padding: 8px; background: #27ae60; color: #fff; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; display: none;">📥 Coller</button>
+            </div>
         </div>
 
         <div id="palette" class="palette"></div>
@@ -100,7 +122,7 @@
                 <span style="font-size: 10px; color: #888;">PFR / SHV</span>
                 <span id="statPFR" style="display: block; font-size: 18px; font-weight: bold;">0.0%</span>
             </div>
-            <div id="btnFinalize" onclick="toggleFinalize()" style="cursor: pointer; background: #2a2a2a; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid #555;">
+            <div id="btnFinalize" onclick="toggleFinalize()" style="cursor: pointer; background: #2a2a2a; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid #555; transition: 0.3s;">
                 <span id="finalizeIcon" style="font-size: 18px;">⚪</span>
                 <span id="finalizeText" style="display: block; font-size: 10px; color: #888;">BROUILLON</span>
             </div>
@@ -111,208 +133,397 @@
         <div class="io-section">
             <textarea id="ioText" class="io-area" placeholder="Format : AA, 22+, AJs+"></textarea>
             <div style="display: flex; gap: 5px;">
-                <button onclick="exportRange()" style="flex: 1; background: #444; color: white; padding: 8px; font-size: 10px; border-radius: 4px; border:none; cursor:pointer;">EXPORT</button>
-                <button onclick="importRange()" style="flex: 1; background: #27ae60; color: white; padding: 8px; font-size: 10px; border-radius: 4px; border:none; cursor:pointer;">IMPORT</button>
+                <button onclick="exportRange()" style="flex: 1; background: #444; color: white; padding: 8px; font-size: 10px; border-radius: 4px; border:none; cursor:pointer;">📤 EXPORTER</button>
+                <button onclick="importRange()" style="flex: 1; background: #27ae60; color: white; padding: 8px; font-size: 10px; border-radius: 4px; border:none; cursor:pointer;">📥 IMPORTER</button>
             </div>
         </div>
 
-        <button id="btnStartQuiz" onclick="toggleQuiz()" style="margin-top: 15px; width: 100%; padding: 12px; background: #f1c40f; color: #000; font-weight: bold; border-radius: 6px; border: none; cursor: pointer;">🎓 QUIZ</button>
+        <button id="btnStartQuiz" onclick="toggleQuiz()" style="margin-top: 15px; width: 100%; padding: 12px; background: #f1c40f; color: #000; font-weight: bold; border-radius: 6px; border: none; cursor: pointer;">🎓 TESTER MES CONNAISSANCES</button>
 
         <div id="quizSection" style="display:none; background: #2c3e50; padding: 15px; border-radius: 10px; text-align: center; margin-top: 20px;">
-            <h3 id="quizHand" style="color: #f1c40f; font-size: 28px; margin: 10px 0;">??</h3>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #bdc3c7;">
+                <span>Q: <b id="quizCount">1</b>/20</span><span>Score: <b id="quizScore">0</b>/20</span>
+            </div>
+            <h3 style="margin: 10px 0;">Action pour : <span id="quizHand" style="color: #f1c40f; font-size: 28px;">??</span></h3>
             <div id="quizOptions" class="palette"></div>
+            <button onclick="toggleQuiz()" style="margin-top: 10px; background: none; color: #bdc3c7; border: 1px solid #7f8c8d; cursor: pointer; border-radius: 4px; font-size: 10px;">Arrêter</button>
         </div>
 
         <button onclick="resetCurrentRange()" style="margin-top: 20px; width: 100%; background: none; color: #666; border: none; font-size: 11px; cursor: pointer; text-decoration: underline;">🗑️ Effacer cette range</button>
+        <div id="status" style="font-size: 10px; color: #444; text-align: center; margin-top: 10px;">Sync...</div>
     </div>
-
-    <input type="color" id="presetColorPicker" style="display:none">
 
     <script>
         const sbClient = supabase.createClient(S_URL, S_KEY);
         const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
-        let currentTab = 'RFI', currentAction = 'fold', quizActive = false, isMouseDown = false, isCurrentRangeFinalized = false;
-        let userPresets = [], targetPresetId = null, longClickTimer;
+        let currentTab = 'RFI', currentAction = 'fold', quizActive = false, score = 0, questionsDone = 0, quizCorrectAction = "", copiedData = null, isCurrentRangeFinalized = false;
+        let isMouseDown = false;
 
-        // --- INIT GRILLE ---
+        const actionsSB = [
+            { id: 'fold', label: 'FOLD', class: 'fold' },
+            { id: 'action-l-fold', label: 'L-FOLD', class: 'action-l-fold' }, { id: 'action-l-call', label: 'L-CALL', class: 'action-l-call' },
+            { id: 'action-l-3bet', label: 'L-3BET', class: 'action-l-3bet' }, { id: 'action-l-ai', label: 'L-AI', class: 'action-l-ai' },
+            { id: 'action-o-fold', label: 'O-FOLD', class: 'action-o-fold' }, { id: 'action-o-call', label: 'O-CALL', class: 'action-o-call' }, 
+            { id: 'action-o-4bet', label: 'O-4BET', class: 'action-o-4bet' }, { id: 'action-o-ai', label: 'O-AI', class: 'action-o-ai' }
+        ];
+
+        const actionsStd = [
+            { id: 'fold', label: 'FOLD', class: 'fold' },
+            { id: 'action-blue', label: 'RAISE/FOLD', class: 'action-blue' }, { id: 'action-green', label: 'RAISE/CALL', class: 'action-green' },
+            { id: 'action-orange', label: '3/4-BET', class: 'action-orange' }, { id: 'action-purple', label: 'ALL-IN', class: 'action-purple' }
+        ];
+
+        const actionsPush = [
+            { id: 'fold', label: 'FOLD', class: 'fold' },
+            { id: 'action-o-ai', label: 'ALL-IN', class: 'action-o-ai' }
+        ];
+
+        // Gestion de la peinture sur la grille
+        window.addEventListener('mousedown', () => isMouseDown = true);
+        window.addEventListener('mouseup', () => isMouseDown = false);
+
+        function handleCellAction(cell) {
+            if(quizActive || isCurrentRangeFinalized) return;
+            const hand = cell.dataset.hand;
+            cell.className = 'cell ' + currentAction; 
+            updateHand(hand, currentAction); 
+            updateStats();
+        }
+
         const grid = document.getElementById('pokerGrid');
         for (let i = 0; i < 13; i++) {
             for (let j = 0; j < 13; j++) {
                 let hand = (i < j) ? ranks[i]+ranks[j]+"s" : (i > j) ? ranks[j]+ranks[i]+"o" : ranks[i]+ranks[j];
                 const cell = document.createElement('div');
                 cell.className = 'cell fold'; cell.textContent = hand; cell.dataset.hand = hand;
+                
                 cell.onmousedown = () => handleCellAction(cell);
                 cell.onmouseenter = () => { if(isMouseDown) handleCellAction(cell); };
+                
                 grid.appendChild(cell);
             }
         }
-        window.onmousedown = () => isMouseDown = true; window.onmouseup = () => isMouseDown = false;
 
-        function handleCellAction(cell) {
-            if(quizActive || isCurrentRangeFinalized) return;
-            cell.className = 'cell ' + currentAction;
-            updateHand(cell.dataset.hand, currentAction);
-            updateStats();
+        function saveCurrentState() {
+            const state = {
+                tab: currentTab,
+                pos: document.getElementById('posSelect').value,
+                stack: document.getElementById('stackSelect').value,
+                vsPos: (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY'
+            };
+            localStorage.setItem('poker_pro_state', JSON.stringify(state));
         }
 
-        // --- GESTION FAVORIS (PRESETS) ---
-        async function loadPresets() {
-            const { data: { user } } = await sbClient.auth.getUser();
-            const { data } = await sbClient.from('presets').select('*').eq('user_id', user.id).order('order', { ascending: true });
-            if (data) { userPresets = data; renderPresets(); }
-        }
+        function buildPalette(targetId, isQuiz = false) {
+            const pos = document.getElementById('posSelect').value;
+            const container = document.getElementById(targetId);
+            if (!container) return;
+            container.innerHTML = '';
+            
+            let list;
+            if (currentTab === 'PUSH') {
+                list = actionsPush;
+                container.className = 'palette std-mode';
+            } else {
+                const isSBMode = (pos === 'SB' && currentTab === 'RFI');
+                list = isSBMode ? actionsSB : actionsStd;
+                container.className = isSBMode ? 'palette sb-mode' : 'palette std-mode';
+            }
 
-        function renderPresets() {
-            const container = document.getElementById('presetGroup');
-            const addBtn = document.getElementById('btnAddPreset');
-            container.querySelectorAll('.dynamic-preset').forEach(b => b.remove());
-            userPresets.forEach(p => {
-                const btn = document.createElement('button');
-                btn.className = 'dynamic-preset';
-                btn.style.background = p.color || '#2e86de';
-                btn.innerHTML = `${p.label} <span class="delete-btn" onclick="deletePreset('${p.id}', event)">×</span>`;
-                btn.onclick = (e) => { if (e.target.classList.contains('delete-btn')) return; applyPreset(p); };
-                
-                // Personnalisation couleur (clic droit ou appui long)
-                btn.oncontextmenu = (e) => { e.preventDefault(); openColorPicker(p.id); };
-                btn.ontouchstart = () => longClickTimer = setTimeout(() => openColorPicker(p.id), 600);
-                btn.ontouchend = () => clearTimeout(longClickTimer);
-                
-                container.insertBefore(btn, addBtn);
+            list.forEach(a => {
+                const btn = document.createElement('div');
+                btn.className = `tool ${a.class} ${!isQuiz && currentAction === a.id ? 'active' : ''}`;
+                btn.innerText = a.label;
+                // ON AJOUTE CETTE LIGNE pour gérer l'indicateur visuel
+                btn.dataset.action = a.id;
+                btn.onclick = () => isQuiz ? checkQuiz(a.id) : setAction(a.id, btn);
+                container.appendChild(btn);
             });
-            addBtn.style.display = userPresets.length >= 6 ? 'none' : 'block';
+            if (!list.find(a => a.id === currentAction)) currentAction = 'fold';
         }
 
-        function openColorPicker(id) { targetPresetId = id; document.getElementById('presetColorPicker').click(); }
-
-        document.getElementById('presetColorPicker').onchange = async (e) => {
-            const newColor = e.target.value;
-            await sbClient.from('presets').update({ color: newColor }).eq('id', targetPresetId);
-            loadPresets();
-        };
-
-        async function addCurrentAsPreset() {
-            const label = prompt("Nom du favori :");
-            if (!label) return;
-            const { data: { user } } = await sbClient.auth.getUser();
-            await sbClient.from('presets').insert([{
-                user_id: user.id, label: label.substring(0, 12), situation: currentTab,
-                my_pos: document.getElementById('posSelect').value,
-                vs_pos: (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY'),
-                order: userPresets.length
-            }]);
-            loadPresets();
-        }
-
-        async function deletePreset(id, e) { e.stopPropagation(); if(confirm("Supprimer ?")) { await sbClient.from('presets').delete().eq('id', id); loadPresets(); } }
-
-        function applyPreset(p) {
-            document.querySelectorAll('.dynamic-preset').forEach(b => b.classList.remove('selected-preset'));
-            document.getElementById('posSelect').value = p.my_pos;
-            switchTab(p.situation, true);
-            updateVsPosOptions();
-            if (p.vs_pos !== 'ANY' && document.getElementById('vsPosSelect')) document.getElementById('vsPosSelect').value = p.vs_pos;
-            refreshData();
-        }
-
-        // --- LOGIQUE METIER (Stats, Tabs, Sync) ---
-        function updateStats() {
-            let t = 0, v = 0, p = 0;
-            document.querySelectorAll('.cell').forEach(c => {
-                let w = c.dataset.hand.includes('s') ? 4 : (c.dataset.hand.includes('o') ? 12 : 6);
-                t += w; if (!c.classList.contains('fold')) v += w;
-                if (!c.classList.contains('fold') && !c.classList.contains('action-l-call') && !c.classList.contains('action-o-call')) p += w;
-            });
-            document.getElementById('statVPIP').innerText = (v/t*100).toFixed(1) + "%";
-            document.getElementById('statPFR').innerText = (p/t*100).toFixed(1) + "%";
+        function setAction(id, btn) {
+            currentAction = id;
+            document.querySelectorAll('#palette .tool').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
         }
 
         async function refreshData() {
-            const pos = document.getElementById('posSelect').value, stack = document.getElementById('stackSelect').value;
-            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
-            buildPalette('palette');
-            const { data: { user } } = await sbClient.auth.getUser();
+            const statusEl = document.getElementById('status');
+            if (statusEl) statusEl.innerText = "Sync...";
             
-            // Status Finalisée
-            const { data: statusD } = await sbClient.from('ranges').select('is_finalized').eq('user_id', user.id).eq('position', pos).eq('situation', currentTab).eq('vs_position', vsPos).eq('stack_depth', parseInt(stack)).limit(1);
-            isCurrentRangeFinalized = (statusD && statusD[0]) ? statusD[0].is_finalized : false;
-            updateFinalizeUI();
+            const pos = document.getElementById('posSelect').value;
+            const stack = document.getElementById('stackSelect').value;
+            const vsPosSelect = document.getElementById('vsPosSelect');
+            const vsPos = (currentTab === 'DEFENSE' && vsPosSelect) ? vsPosSelect.value : 'ANY';
 
+            buildPalette('palette');
+            saveCurrentState();
             document.querySelectorAll('.cell').forEach(c => c.className = 'cell fold');
-            const { data } = await sbClient.from('ranges').select('*').eq('user_id', user.id).eq('position', pos).eq('situation', currentTab).eq('vs_position', vsPos).eq('stack_depth', parseInt(stack));
-            if (data) data.forEach(r => { if(document.querySelector(`[data-hand="${r.hand}"]`)) document.querySelector(`[data-hand="${r.hand}"]`).className = 'cell ' + r.action; });
-            updateStats();
+            
+            try {
+                const { data: { user } } = await sbClient.auth.getUser();
+                if (!user) return;
+                const { data: statusData } = await sbClient.from('ranges').select('is_finalized').eq('user_id', user.id).eq('position', pos).eq('situation', currentTab).eq('vs_position', vsPos).eq('stack_depth', parseInt(stack)).limit(1);
+                isCurrentRangeFinalized = (statusData && statusData.length > 0) ? statusData[0].is_finalized : false;
+                updateFinalizeUI(); 
+                const { data } = await sbClient.from('ranges').select('*').eq('user_id', user.id).eq('position', pos).eq('situation', currentTab).eq('vs_position', vsPos).eq('stack_depth', parseInt(stack));
+                if (data) data.forEach(row => {
+                    const cell = document.querySelector(`[data-hand="${row.hand}"]`);
+                    if (cell) cell.className = 'cell ' + row.action;
+                });
+                updateStats();
+                if (statusEl) statusEl.innerText = "Connecté - " + pos;
+            } catch (err) { console.error(err); }
         }
 
-        async function updateHand(hand, action) {
-            const { data: { user } } = await sbClient.auth.getUser();
-            await sbClient.from('ranges').upsert({ user_id: user.id, hand, action, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY'), stack_depth: parseInt(document.getElementById('stackSelect').value), is_finalized: isCurrentRangeFinalized });
+        function updateStats() {
+            let total = 0, played = 0, aggro = 0;
+            document.querySelectorAll('.cell').forEach(c => {
+                let w = c.dataset.hand.includes('s') ? 4 : (c.dataset.hand.includes('o') ? 12 : 6);
+                total += w;
+                if (!c.classList.contains('fold')) played += w;
+                if (c.className.includes('-o-ai') || c.className.includes('action-purple') || c.className.includes('action-orange')) aggro += w;
+            });
+            document.getElementById('statVPIP').innerText = (played/total*100).toFixed(1) + "%";
+            document.getElementById('statPFR').innerText = (aggro/total*100).toFixed(1) + "%";
         }
 
         function switchTab(tab, skipRefresh = false) {
+            // 1. On retire le contour doré dès qu'on change d'onglet
+            clearPresetStyle(); 
+            
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
-            const sSelect = document.getElementById('stackSelect');
+            const tabBtn = document.getElementById('tab-' + tab);
+            if(tabBtn) tabBtn.classList.add('active');
+            
+            const stackSelect = document.getElementById('stackSelect');
+            
             if (tab === 'PUSH') {
-                sSelect.innerHTML = Array.from({length:15}, (_,i)=>`<option value="${15-i}">${15-i} BB</option>`).join('');
+                let pushOptions = "";
+                for(let i=15; i>=1; i--) pushOptions += `<option value="${i}">${i} BB</option>`;
+                stackSelect.innerHTML = pushOptions;
                 document.getElementById('vsPosContainer').style.display = 'none';
             } else {
-                sSelect.innerHTML = `<option value="100">100 BB</option><option value="80">80 BB</option><option value="60">60 BB</option><option value="40">40 BB</option><option value="20">20 BB</option>`;
+                stackSelect.innerHTML = `<option value="100">100 BB</option><option value="80">80 BB</option><option value="60">60 BB</option><option value="40">40 BB</option><option value="30">30 BB</option><option value="20">20 BB</option><option value="14">14 BB</option><option value="10">10 BB</option>`;
                 document.getElementById('vsPosContainer').style.display = (tab === 'DEFENSE') ? 'block' : 'none';
             }
+        
+            // On s'assure que le changement de stack nettoie aussi le style
+            stackSelect.onchange = () => { clearPresetStyle(); refreshData(); };
+            
+            updateVsPosOptions(); 
             if (!skipRefresh) refreshData();
         }
 
         function updateVsPosOptions() {
-            const ord = ["UTG", "UTG+1", "MP", "HJ", "CO", "BTN", "SB", "BB"];
-            const idx = ord.indexOf(document.getElementById('posSelect').value);
-            let h = ""; for (let i = 0; i < idx; i++) h += `<option value="${ord[i]}">${ord[i]}</option>`;
-            document.getElementById('vsPosSelect').innerHTML = h || `<option value="ANY">ANY</option>`;
+            const POSITION_ORDER = ["UTG", "UTG+1", "MP", "HJ", "CO", "BTN", "SB", "BB"];
+            const myPos = document.getElementById('posSelect').value;
+            const myIndex = POSITION_ORDER.indexOf(myPos);
+            let html = "";
+            for (let i = 0; i < myIndex; i++) {
+                if (POSITION_ORDER[i] === "SB") html += `<option value="SB">SB (Open)</option><option value="SB_LIMP">SB (Limp)</option>`;
+                else html += `<option value="${POSITION_ORDER[i]}">${POSITION_ORDER[i]}</option>`;
+            }
+            document.getElementById('vsPosSelect').innerHTML = html || `<option value="ANY">ANY</option>`;
         }
 
-        function buildPalette(tid) {
-            const cont = document.getElementById(tid); cont.innerHTML = '';
-            const pos = document.getElementById('posSelect').value;
-            const actions = (currentTab === 'PUSH') ? [{id:'fold',label:'FOLD',class:'fold'},{id:'action-o-ai',label:'ALL-IN',class:'action-o-ai'}] : 
-                           (pos === 'SB' && currentTab === 'RFI' ? [{id:'fold',label:'FOLD',class:'fold'},{id:'action-l-fold',label:'L-FOLD',class:'action-l-fold'},{id:'action-l-call',label:'L-CALL',class:'action-l-call'},{id:'action-l-3bet',label:'L-3BET',class:'action-l-3bet'},{id:'action-l-ai',label:'L-AI',class:'action-l-ai'},{id:'action-o-fold',label:'O-FOLD',class:'action-o-fold'},{id:'action-o-call',label:'O-CALL',class:'action-o-call'},{id:'action-o-4bet',label:'O-4BET',class:'action-o-4bet'},{id:'action-o-ai',label:'O-AI',class:'action-o-ai'}] : 
-                           [{id:'fold',label:'FOLD',class:'fold'},{id:'action-blue',label:'RAISE/FOLD',class:'action-blue'},{id:'action-green',label:'RAISE/CALL',class:'action-green'},{id:'action-orange',label:'3/4-BET',class:'action-orange'},{id:'action-purple',label:'ALL-IN',class:'action-purple'}]);
-            cont.className = (actions.length > 5) ? 'palette sb-mode' : 'palette std-mode';
-            actions.forEach(a => {
-                const b = document.createElement('div'); b.className = `tool ${a.class} ${currentAction === a.id ? 'active' : ''}`;
-                b.innerText = a.label; b.onclick = () => { currentAction = a.id; document.querySelectorAll('.tool').forEach(t => t.classList.remove('active')); b.classList.add('active'); };
-                cont.appendChild(b);
+        // Fonction pour retirer le contour doré des presets
+        function clearPresetStyle() {
+            document.querySelectorAll('#presetGroup button').forEach(b => {
+                b.classList.remove('selected-preset');
             });
+        }
+
+        function applyPreset(sit, myPos, vsPos, btnElement) {
+            // On nettoie d'abord tout style existant
+            clearPresetStyle();
+            
+            document.getElementById('posSelect').value = myPos;
+            updateVsPosOptions(); 
+            
+            // On passe skipRefresh à true pour éviter un double appel à refreshData
+            switchTab(sit, true); 
+        
+            if (btnElement) {
+                btnElement.classList.add('selected-preset');
+            }
+        
+            setTimeout(() => {
+                if (vsPos !== 'ANY') {
+                    const vsSelect = document.getElementById('vsPosSelect');
+                    if (vsSelect) vsSelect.value = vsPos;
+                }
+                refreshData();
+            }, 50);
+        }
+
+        async function updateHand(hand, action) {
+            const { data: { user } } = await sbClient.auth.getUser();
+            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
+            await sbClient.from('ranges').upsert({ user_id: user.id, hand, action, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: vsPos, stack_depth: parseInt(document.getElementById('stackSelect').value), is_finalized: isCurrentRangeFinalized });
         }
 
         async function toggleFinalize() {
             const { data: { user } } = await sbClient.auth.getUser();
+            if (!user) return;
             isCurrentRangeFinalized = !isCurrentRangeFinalized;
-            await sbClient.from('ranges').update({ is_finalized: isCurrentRangeFinalized }).eq('user_id', user.id).eq('position', document.getElementById('posSelect').value).eq('situation', currentTab).eq('stack_depth', parseInt(document.getElementById('stackSelect').value));
-            updateFinalizeUI();
+            const { error } = await sbClient.from('ranges').update({ is_finalized: isCurrentRangeFinalized }).eq('user_id', user.id).eq('position', document.getElementById('posSelect').value).eq('situation', currentTab).eq('vs_position', (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY')).eq('stack_depth', parseInt(document.getElementById('stackSelect').value));
+            if (!error) updateFinalizeUI();
         }
 
         function updateFinalizeUI() {
-            const t = document.getElementById('finalizeText'), i = document.getElementById('finalizeIcon');
-            t.innerText = isCurrentRangeFinalized ? "FINALISÉE" : "BROUILLON";
-            t.style.color = isCurrentRangeFinalized ? "#2ecc71" : "#888";
-            i.innerText = isCurrentRangeFinalized ? "✅" : "⚪";
+            const btn = document.getElementById('btnFinalize');
+            const icon = document.getElementById('finalizeIcon');
+            const text = document.getElementById('finalizeText');
+            if(!btn) return;
+            btn.style.borderBottomColor = isCurrentRangeFinalized ? "#2ecc71" : "#555";
+            icon.innerText = isCurrentRangeFinalized ? "✅" : "⚪";
+            text.innerText = isCurrentRangeFinalized ? "FINALISÉE" : "BROUILLON";
+            text.style.color = isCurrentRangeFinalized ? "#2ecc71" : "#888";
         }
 
-        // --- AUTH ---
+        function toggleQuiz() { quizActive = !quizActive; document.getElementById('quizSection').style.display = quizActive ? 'block' : 'none'; document.getElementById('pokerGrid').style.display = quizActive ? 'none' : 'grid'; if (quizActive) { score = 0; questionsDone = 0; nextQuizHand(); } }
+        function nextQuizHand() {
+            if (questionsDone >= 20) { 
+                alert(`Quiz terminé ! Score : ${score} / 20`); 
+                toggleQuiz(); 
+                return; 
+            }
+        
+            buildPalette('quizOptions', true);
+            const allCells = Array.from(document.querySelectorAll('.cell'));
+            
+            // 1. Identifier les "mains frontières" (celles qui touchent une main d'une autre couleur)
+            const boundaryHands = allCells.filter((cell, index) => {
+                const row = Math.floor(index / 13);
+                const col = index % 13;
+                const currentAction = cell.className;
+        
+                // On regarde les voisins directs (haut, bas, gauche, droite)
+                const neighbors = [
+                    index - 1,  index + 1,          // Gauche, Droite
+                    index - 13, index + 13          // Haut, Bas
+                ];
+        
+                return neighbors.some(nIndex => {
+                    if (nIndex >= 0 && nIndex < 169) {
+                        // Si un voisin a une classe CSS différente, c'est une frontière !
+                        return allCells[nIndex].className !== currentAction;
+                    }
+                    return false;
+                });
+            });
+        
+            // 2. Sélection : 80% de chances de piocher une frontière, 20% de pur hasard
+            let selectedCell;
+            if (boundaryHands.length > 0 && Math.random() < 0.8) {
+                selectedCell = boundaryHands[Math.floor(Math.random() * boundaryHands.length)];
+            } else {
+                selectedCell = allCells[Math.floor(Math.random() * allCells.length)];
+            }
+        
+            const randomHand = selectedCell.dataset.hand;
+            document.getElementById('quizHand').innerText = randomHand;
+            
+            // Déterminer la bonne réponse
+            quizCorrectAction = Array.from(selectedCell.classList).find(cls => cls.startsWith('action-') || cls === 'fold') || 'fold';
+            
+            document.getElementById('quizCount').innerText = questionsDone + 1;
+            document.getElementById('quizScore').innerText = score;
+        }
+        function checkQuiz(userAction) {
+            if (!quizActive) return;
+        
+            const buttons = document.querySelectorAll('#quizOptions .tool');
+            // Recherche par data-action au lieu de transformer la fonction en string
+            let clickedBtn = Array.from(buttons).find(b => b.dataset.action === userAction);
+            let correctBtn = Array.from(buttons).find(b => b.dataset.action === quizCorrectAction);
+        
+            if (userAction === quizCorrectAction) {
+                score++;
+                if (clickedBtn) {
+                    clickedBtn.classList.add('quiz-flash-correct');
+                    clickedBtn.innerText = "✅ " + clickedBtn.innerText; // Ajout visuel
+                }
+            } else {
+                if (clickedBtn) {
+                    clickedBtn.classList.add('quiz-flash-wrong');
+                    clickedBtn.innerText = "❌ " + clickedBtn.innerText; // Ajout visuel
+                }
+                if (correctBtn) {
+                    correctBtn.classList.add('quiz-flash-correct');
+                    // On peut même ajouter une petite flèche pour montrer la bonne voie
+                    correctBtn.innerText = "⬅️ " + correctBtn.innerText;
+                }
+            }
+        
+            questionsDone++;
+            
+            // On bloque les clics pendant l'animation pour éviter de sauter des questions
+            document.getElementById('quizOptions').style.pointerEvents = 'none';
+
+            setTimeout(() => {
+                document.getElementById('quizOptions').style.pointerEvents = 'auto';
+                nextQuizHand();
+            }, 600); 
+        }
+        function copyCurrentRange() { copiedData = Array.from(document.querySelectorAll('.cell')).filter(c => !c.classList.contains('fold')).map(c => ({ hand: c.dataset.hand, action: Array.from(c.classList).find(cls => cls.startsWith('action-')) })); document.getElementById('pasteBtn').style.display = 'block'; }
+        async function pasteRange() { const { data: { user } } = await sbClient.auth.getUser(); const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY'; const upserts = copiedData.map(d => ({ user_id: user.id, hand: d.hand, action: d.action, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: vsPos, stack_depth: parseInt(document.getElementById('stackSelect').value), is_finalized: isCurrentRangeFinalized })); await sbClient.from('ranges').upsert(upserts); refreshData(); }
+        function exportRange() { const activeHands = Array.from(document.querySelectorAll('.cell')).filter(c => c.classList.contains(currentAction)).map(c => c.dataset.hand); document.getElementById('ioText').value = activeHands.join(', '); }
+        
+        async function importRange() {
+            const textarea = document.getElementById('ioText');
+            const text = textarea.value;
+            if (!text || currentAction === 'fold') { alert("Sélectionnez une action (ex: ALL-IN) et collez le texte."); return; }
+            const { data: { user } } = await sbClient.auth.getUser();
+            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
+            const pos = document.getElementById('posSelect').value;
+            const stack = parseInt(document.getElementById('stackSelect').value);
+            const tokens = text.replace(/[,;]/g, ' ').split(/\s+/).filter(t => t.length > 0);
+            let handsToUpdate = new Set();
+            tokens.forEach(token => {
+                let t = token.trim();
+                if (t.includes('+')) {
+                    const base = t.replace('+', '');
+                    if (base.length === 2) { 
+                        const r = base[0].toUpperCase();
+                        const startIndex = ranks.indexOf(r);
+                        for (let i = 0; i <= startIndex; i++) handsToUpdate.add(ranks[i] + ranks[i]);
+                    } else if (base.length === 3) { 
+                        const r1 = base[0].toUpperCase(), r2 = base[1].toUpperCase(), type = base[2].toLowerCase();
+                        for (let i = ranks.indexOf(r1) + 1; i <= ranks.indexOf(r2); i++) handsToUpdate.add(r1 + ranks[i] + type);
+                    }
+                } else {
+                    let hand = (t.length === 3) ? t.substring(0, 2).toUpperCase() + t.substring(2).toLowerCase() : t.toUpperCase();
+                    handsToUpdate.add(hand);
+                }
+            });
+            const upserts = Array.from(handsToUpdate).map(h => ({ user_id: user.id, hand: h, action: currentAction, position: pos, situation: currentTab, vs_position: vsPos, stack_depth: stack, is_finalized: isCurrentRangeFinalized }));
+            await sbClient.from('ranges').upsert(upserts); await refreshData(); textarea.value = "";
+        }
+
+        async function resetCurrentRange() { if (!confirm("Vider cette range ?")) return; const { data: { user } } = await sbClient.auth.getUser(); await sbClient.from('ranges').delete().eq('user_id', user.id).eq('position', document.getElementById('posSelect').value).eq('situation', currentTab).eq('vs_position', (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY')).eq('stack_depth', parseInt(document.getElementById('stackSelect').value)); refreshData(); }
+        async function signIn() { const { error } = await sbClient.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('password').value }); if (error) alert(error.message); }
+
         sbClient.auth.onAuthStateChange((event, session) => { 
-            if (session) { document.getElementById('login-overlay').style.display = 'none'; loadPresets(); switchTab('RFI'); } 
+            if (session) { 
+                document.getElementById('login-overlay').style.display = 'none'; 
+                const savedState = localStorage.getItem('poker_pro_state');
+                if (savedState) {
+                    const state = JSON.parse(savedState);
+                    switchTab(state.tab, true); 
+                    document.getElementById('posSelect').value = state.pos;
+                    updateVsPosOptions();
+                    setTimeout(() => {
+                        document.getElementById('stackSelect').value = state.stack;
+                        if (state.tab === 'DEFENSE' && document.getElementById('vsPosSelect')) document.getElementById('vsPosSelect').value = state.vsPos;
+                        refreshData();
+                    }, 100);
+                } else switchTab('RFI'); 
+            } 
         });
-        async function signIn() { 
-            const e = document.getElementById('email').value, p = document.getElementById('password').value;
-            const { error } = await sbClient.auth.signInWithPassword({ email: e, password: p });
-            if (error) alert(error.message);
-        }
-
-        // --- EXPORT/IMPORT & QUIZ (Simplifiés pour rester fidèle) ---
-        function exportRange() { document.getElementById('ioText').value = Array.from(document.querySelectorAll('.cell')).filter(c => c.className.includes(currentAction)).map(c => c.dataset.hand).join(', '); }
-        async function importRange() { /* Logique d'import existante... */ refreshData(); }
-        function toggleQuiz() { quizActive = !quizActive; document.getElementById('quizSection').style.display = quizActive ? 'block' : 'none'; document.getElementById('pokerGrid').style.display = quizActive ? 'none' : 'grid'; }
     </script>
 </body>
 </html>
