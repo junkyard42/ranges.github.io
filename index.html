@@ -96,14 +96,20 @@
                 <button onclick="applyPreset('PUSH', 'SB', 'ANY', this)" style="background: #c0392b; color: white;">⚡ PUSH SB</button>
             </div>
             
-            <select id="posSelect" onchange="clearPresetStyle(); updateVsPosOptions(); refreshData();">
-                <option value="UTG">UTG</option><option value="UTG+1">UTG+1</option>
-                <option value="MP">MP</option><option value="HJ">HJ</option>
-                <option value="CO">CO</option><option value="BTN">BTN</option>
-                <option value="SB">SB</option><option value="BB">BB</option>
-            </select>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 10px; color: #3498db; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">MA POSITION</label>
+                <select id="posSelect" onchange="clearPresetStyle(); updateVsPosOptions(); refreshData();">
+                    <option value="UTG">UTG</option><option value="UTG+1">UTG+1</option>
+                    <option value="MP">MP</option><option value="HJ">HJ</option>
+                    <option value="CO">CO</option><option value="BTN">BTN</option>
+                    <option value="SB">SB</option><option value="BB">BB</option>
+                </select>
+            </div>
 
-            <div id="vsPosContainer" style="display: none;"><select id="vsPosSelect" onchange="refreshData();"></select></div>
+            <div id="vsPosContainer" style="display: none; flex-direction: column; gap: 4px;">
+                <label style="font-size: 10px; color: #e74c3c; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">VS OPEN DE</label>
+                <select id="vsPosSelect" onchange="refreshData();"></select>
+            </div>
 
             <div style="display: flex; gap: 10px; margin-top: 5px;">
                 <button onclick="copyCurrentRange()" style="flex: 1; padding: 8px; background: #444; color: #fff; border: 1px solid #666; border-radius: 4px; font-size: 11px; cursor: pointer;">📋 Copier</button>
@@ -290,28 +296,21 @@
         }
 
         function switchTab(tab, skipRefresh = false) {
-            // 1. On retire le contour doré dès qu'on change d'onglet
             clearPresetStyle(); 
-            
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            const tabBtn = document.getElementById('tab-' + tab);
-            if(tabBtn) tabBtn.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
             
-            const stackSelect = document.getElementById('stackSelect');
-            
-            if (tab === 'PUSH') {
-                let pushOptions = "";
-                for(let i=15; i>=1; i--) pushOptions += `<option value="${i}">${i} BB</option>`;
-                stackSelect.innerHTML = pushOptions;
-                document.getElementById('vsPosContainer').style.display = 'none';
-            } else {
-                stackSelect.innerHTML = `<option value="100">100 BB</option><option value="80">80 BB</option><option value="60">60 BB</option><option value="40">40 BB</option><option value="30">30 BB</option><option value="20">20 BB</option><option value="14">14 BB</option><option value="10">10 BB</option>`;
-                document.getElementById('vsPosContainer').style.display = (tab === 'DEFENSE') ? 'block' : 'none';
-            }
+            const s = document.getElementById('stackSelect');
+            const vsContainer = document.getElementById('vsPosContainer'); // On cible le container du label + select
         
-            // On s'assure que le changement de stack nettoie aussi le style
-            stackSelect.onchange = () => { clearPresetStyle(); refreshData(); };
+            if (tab === 'PUSH') {
+                s.innerHTML = Array.from({length:15}, (_,i)=>`<option value="${15-i}">${15-i} BB</option>`).join('');
+                vsContainer.style.display = 'none'; // Cache tout le bloc
+            } else {
+                s.innerHTML = `<option value="100">100 BB</option><option value="80">80 BB</option><option value="60">60 BB</option><option value="40">40 BB</option><option value="20">20 BB</option>`;
+                vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none'; // Affiche en flex pour garder l'alignement colonne
+            }
             
             updateVsPosOptions(); 
             if (!skipRefresh) refreshData();
