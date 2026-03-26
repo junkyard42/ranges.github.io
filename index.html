@@ -10,21 +10,24 @@
         body { font-family: 'Inter', sans-serif; background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; user-select: none; }
         .container { background: #1e1e1e; padding: 15px; border-radius: 12px; width: 100%; max-width: 500px; box-sizing: border-box; }
         
-        /* Onglets et Contrôles */
         .tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #2a2a2a; padding: 5px; border-radius: 8px; }
         .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 6px; font-weight: bold; font-size: 11px; color: #888; transition: 0.2s; }
         .tab.active { background: #3498db; color: white; }
+
         .controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
         select { width: 100%; padding: 10px; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 6px; font-size: 13px; }
 
-        /* Grille de Poker */
-        .grid { display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; }
-        .cell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; cursor: pointer; border-radius: 2px; border: 1px solid rgba(255,255,255,0.03); transition: background 0.1s; }
+        /* PRESETS */
+        .quick-presets { display: flex; gap: 6px; margin-bottom: 15px; width: 100%; }
+        .quick-presets button { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; min-height: 38px; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; color: white; }
+        .quick-presets button.selected-preset { box-shadow: inset 0 0 0 3px #f1c40f !important; transform: scale(1.02); }
+        #btnAddPreset { background: #444; color: #aaa; border: 2px dashed #666; }
+        .delete-btn { position: absolute; top: -5px; right: -5px; background: #e74c3c; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #1e1e1e; font-weight: bold; z-index: 10; }
 
-        .quiz-flash-correct { box-shadow: 0 0 15px #2ecc71, inset 0 0 10px #2ecc71 !important; border: 2px solid white !important; transform: scale(1.05); z-index: 10; }
-        .quiz-flash-wrong { box-shadow: 0 0 15px #e74c3c, inset 0 0 10px #e74c3c !important; border: 2px solid white !important; opacity: 0.8; }
-        
-        /* --- COULEURS ACTIONS --- */
+        .grid { display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; }
+        .cell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; cursor: pointer; border-radius: 2px; border: 1px solid rgba(255,255,255,0.03); }
+
+        /* Couleurs Actions */
         .fold { background: #2a2a2a; color: #555; }
         .action-blue { background: #3498db; color: white; }
         .action-green { background: #2ecc71; color: white; }
@@ -45,20 +48,13 @@
         .palette.sb-mode { display: grid; grid-template-columns: repeat(3, 1fr); }
         .tool { padding: 10px 5px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; font-weight: bold; font-size: 9px; text-align: center; }
         .tool.active { border-color: white; }
-        
-        .io-section { margin-top: 15px; padding: 10px; background: #252525; border-radius: 8px; border: 1px solid #333; }
-        .io-area { width: 100%; height: 50px; background: #121212; color: #2ecc71; border: 1px solid #444; border-radius: 4px; font-family: monospace; font-size: 11px; padding: 5px; box-sizing: border-box; resize: none; margin-bottom: 8px; }
-        
-        /* PRESETS STYLES */
-        .quick-presets { display: flex; gap: 6px; margin-bottom: 15px; width: 100%; }
-        .quick-presets button { position: relative; display: flex; align-items: center; justify-content: center; min-height: 38px; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; flex: 1; }
-        .quick-presets button.selected-preset { box-shadow: inset 0 0 0 4px #f1c40f !important; transform: scale(1.02); filter: brightness(1.2); }
-        
-        .delete-btn { position: absolute; top: -5px; right: -5px; background: #e74c3c; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #1e1e1e; font-weight: bold; z-index: 5; }
-        #btnAddPreset { background: #444; color: #aaa; border: 2px dashed #666; }
-        
+
         #login-overlay { position: fixed; inset: 0; background: #121212; display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 15px; }
         input[type="email"], input[type="password"] { padding: 12px; border-radius: 6px; border: 1px solid #333; width: 250px; background: #1e1e1e; color: white; }
+        
+        /* Flash Quiz */
+        .quiz-flash-correct { box-shadow: 0 0 15px #2ecc71, inset 0 0 10px #2ecc71 !important; border: 2px solid white !important; transform: scale(1.05); z-index: 10; }
+        .quiz-flash-wrong { box-shadow: 0 0 15px #e74c3c, inset 0 0 10px #e74c3c !important; border: 2px solid white !important; opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -105,6 +101,10 @@
                 <span style="font-size: 10px; color: #888;">VPIP</span>
                 <span id="statVPIP" style="display: block; font-size: 18px; font-weight: bold;">0.0%</span>
             </div>
+            <div style="flex: 1; background: #2a2a2a; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid #2ecc71;">
+                <span style="font-size: 10px; color: #888;">PFR</span>
+                <span id="statPFR" style="display: block; font-size: 18px; font-weight: bold;">0.0%</span>
+            </div>
             <div id="btnFinalize" onclick="toggleFinalize()" style="cursor: pointer; flex: 1; background: #2a2a2a; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid #555;">
                 <span id="finalizeIcon">⚪</span>
                 <span id="finalizeText" style="display: block; font-size: 10px; color: #888;">BROUILLON</span>
@@ -115,11 +115,10 @@
 
         <div id="quizSection" style="display:none; background: #2c3e50; padding: 15px; border-radius: 10px; text-align: center; margin-top: 20px;">
             <h3 style="margin: 10px 0;">Action pour : <span id="quizHand" style="color: #f1c40f; font-size: 28px;">??</span></h3>
-            <div id="quizOptions" class="palette"></div>
+            <div id="quizOptions" class="palette std-mode"></div>
         </div>
 
         <button onclick="resetCurrentRange()" style="margin-top: 20px; width: 100%; background: none; color: #666; border: none; font-size: 11px; cursor: pointer; text-decoration: underline;">🗑️ Effacer cette range</button>
-        <div id="status" style="font-size: 10px; color: #444; text-align: center; margin-top: 10px;">Connectez-vous pour synchroniser</div>
     </div>
 
     <input type="color" id="presetColorPicker" style="display:none">
@@ -127,7 +126,8 @@
     <script>
         const sbClient = supabase.createClient(S_URL, S_KEY);
         const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
-        let currentTab = 'RFI', currentAction = 'fold', quizActive = false, isMouseDown = false, isCurrentRangeFinalized = false;
+        let currentTab = 'RFI', currentAction = 'fold', isMouseDown = false;
+        let quizActive = false, isCurrentRangeFinalized = false;
         let userPresets = [], longClickTimer, targetPresetId = null, isLongPress = false;
 
         const actionsSB = [{id:'fold',label:'FOLD',class:'fold'},{id:'action-l-fold',label:'L-FOLD',class:'action-l-fold'},{id:'action-l-call',label:'L-CALL',class:'action-l-call'},{id:'action-l-3bet',label:'L-3BET',class:'action-l-3bet'},{id:'action-l-ai',label:'L-AI',class:'action-l-ai'},{id:'action-o-fold',label:'O-FOLD',class:'action-o-fold'},{id:'action-o-call',label:'O-CALL',class:'action-o-call'},{id:'action-o-4bet',label:'O-4BET',class:'action-o-4bet'},{id:'action-o-ai',label:'O-AI',class:'action-o-ai'}];
@@ -146,23 +146,42 @@
                 grid.appendChild(cell);
             }
         }
-        window.addEventListener('mousedown', () => isMouseDown = true);
-        window.addEventListener('mouseup', () => isMouseDown = false);
+        window.onmousedown = () => isMouseDown = true; window.onmouseup = () => isMouseDown = false;
 
         function handleCellAction(cell) {
             if(quizActive || isCurrentRangeFinalized) return;
-            cell.className = 'cell ' + currentAction; 
-            updateHand(cell.dataset.hand, currentAction); 
+            cell.className = 'cell ' + currentAction;
+            updateHand(cell.dataset.hand, currentAction);
             updateStats();
         }
 
-        // NAVIGATION & REFRESH
+        // AUTH & BOOT
+        sbClient.auth.onAuthStateChange((event, session) => { 
+            if (session) { 
+                document.getElementById('login-overlay').style.display = 'none'; 
+                loadPresets(); 
+                const saved = localStorage.getItem('poker_pro_state');
+                if (saved) {
+                    const s = JSON.parse(saved);
+                    switchTab(s.tab, true);
+                    document.getElementById('posSelect').value = s.pos;
+                    updateVsPosOptions();
+                    setTimeout(() => { document.getElementById('stackSelect').value = s.stack; refreshData(); }, 100);
+                } else switchTab('RFI');
+            } 
+        });
+
+        async function signIn() { 
+            const e = document.getElementById('email').value, p = document.getElementById('password').value;
+            const { error } = await sbClient.auth.signInWithPassword({ email: e, password: p });
+            if (error) alert(error.message);
+        }
+
+        // NAVIGATION
         function switchTab(tab, skipRefresh = false) {
-            clearPresetStyle();
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.add('active');
-            
             const sSelect = document.getElementById('stackSelect');
             if (tab === 'PUSH') {
                 let opts = ""; for(let i=15; i>=1; i--) opts += `<option value="${i}">${i} BB</option>`;
@@ -172,21 +191,15 @@
                 sSelect.innerHTML = `<option value="100">100 BB</option><option value="80">80 BB</option><option value="60">60 BB</option><option value="40">40 BB</option><option value="20">20 BB</option>`;
                 document.getElementById('vsPosContainer').style.display = (tab === 'DEFENSE') ? 'block' : 'none';
             }
-            sSelect.onchange = () => { clearPresetStyle(); refreshData(); };
-            updateVsPosOptions(); 
             if (!skipRefresh) refreshData();
         }
 
         async function refreshData() {
-            const pos = document.getElementById('posSelect').value;
-            const stack = document.getElementById('stackSelect').value;
+            const pos = document.getElementById('posSelect').value, stack = document.getElementById('stackSelect').value;
             const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
-            buildPalette('palette');
-            saveState();
-            
+            buildPalette('palette'); saveState();
             const { data: { user } } = await sbClient.auth.getUser();
-            if (!user) return;
-
+            
             const { data: statusD } = await sbClient.from('ranges').select('is_finalized').eq('user_id', user.id).eq('position', pos).eq('situation', currentTab).eq('vs_position', vsPos).eq('stack_depth', parseInt(stack)).limit(1);
             isCurrentRangeFinalized = (statusD && statusD[0]) ? statusD[0].is_finalized : false;
             updateFinalizeUI();
@@ -211,14 +224,11 @@
             const container = document.getElementById('presetGroup');
             const addBtn = document.getElementById('btnAddPreset');
             container.querySelectorAll('.dynamic-preset').forEach(b => b.remove());
-
             userPresets.forEach(p => {
                 const btn = document.createElement('button');
                 btn.className = 'dynamic-preset';
                 btn.style.background = p.color || '#2e86de';
-                btn.style.color = 'white';
                 btn.innerHTML = `${p.label} <span class="delete-btn" onclick="deletePreset('${p.id}', event)">×</span>`;
-                
                 btn.onclick = (e) => {
                     if (isLongPress || e.target.classList.contains('delete-btn')) { isLongPress = false; return; }
                     applyPreset(p.situation, p.my_pos, p.vs_pos, btn);
@@ -241,9 +251,8 @@
         function openColorPicker(id) { targetPresetId = id; document.getElementById('presetColorPicker').click(); }
 
         document.getElementById('presetColorPicker').onchange = async (e) => {
-            const color = e.target.value;
             if (targetPresetId) {
-                await sbClient.from('presets').update({ color }).eq('id', targetPresetId);
+                await sbClient.from('presets').update({ color: e.target.value }).eq('id', targetPresetId);
                 loadPresets();
             }
         };
@@ -255,7 +264,7 @@
             await sbClient.from('presets').insert([{
                 user_id: user.id, label: label.substring(0, 12), situation: currentTab,
                 my_pos: document.getElementById('posSelect').value,
-                vs_pos: (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY',
+                vs_pos: (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY'),
                 order: userPresets.length
             }]);
             loadPresets();
@@ -268,33 +277,14 @@
             document.getElementById('posSelect').value = myP;
             switchTab(sit, true);
             if (btn) btn.classList.add('selected-preset');
+            updateVsPosOptions();
             setTimeout(() => {
                 if(vsP !== 'ANY' && document.getElementById('vsPosSelect')) document.getElementById('vsPosSelect').value = vsP;
                 refreshData();
             }, 50);
         }
 
-        // AUTH & UTILS
-        sbClient.auth.onAuthStateChange((event, session) => { 
-            if (session) { 
-                document.getElementById('login-overlay').style.display = 'none'; 
-                loadPresets(); 
-                const saved = localStorage.getItem('poker_pro_state');
-                if (saved) {
-                    const s = JSON.parse(saved);
-                    switchTab(s.tab, true);
-                    document.getElementById('posSelect').value = s.pos;
-                    setTimeout(() => { document.getElementById('stackSelect').value = s.stack; refreshData(); }, 100);
-                } else switchTab('RFI');
-            } 
-        });
-
-        async function signIn() { 
-            const e = document.getElementById('email').value, p = document.getElementById('password').value;
-            const { error } = await sbClient.auth.signInWithPassword({ email: e, password: p });
-            if (error) alert(error.message);
-        }
-
+        // LOGIQUE METIER
         function buildPalette(tid) {
             const cont = document.getElementById(tid); cont.innerHTML = '';
             let list = (currentTab === 'PUSH') ? actionsPush : (document.getElementById('posSelect').value === 'SB' && currentTab === 'RFI' ? actionsSB : actionsStd);
@@ -319,26 +309,22 @@
             await sbClient.from('ranges').upsert({ 
                 user_id: user.id, hand, action, position: document.getElementById('posSelect').value, 
                 situation: currentTab, vs_position: (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY'), 
-                stack_depth: parseInt(document.getElementById('stackSelect').value), is_finalized: isCurrentRangeFinalized 
+                stack_depth: parseInt(document.getElementById('stackSelect').value), is_finalized: isCurrentRangeFinalized
             });
         }
 
         function updateStats() {
-            let t = 0, p = 0;
+            let t = 0, v = 0, p = 0;
             document.querySelectorAll('.cell').forEach(c => {
                 let w = c.dataset.hand.includes('s') ? 4 : (c.dataset.hand.includes('o') ? 12 : 6);
-                t += w; if (!c.classList.contains('fold')) p += w;
+                t += w;
+                if (!c.classList.contains('fold')) v += w;
+                if (!c.classList.contains('fold') && !c.classList.contains('action-l-call') && !c.classList.contains('action-o-call')) p += w;
             });
-            document.getElementById('statVPIP').innerText = (p/t*100).toFixed(1) + "%";
+            document.getElementById('statVPIP').innerText = (v/t*100).toFixed(1) + "%";
+            document.getElementById('statPFR').innerText = (p/t*100).toFixed(1) + "%";
         }
 
-        function saveState() {
-            const s = { tab: currentTab, pos: document.getElementById('posSelect').value, stack: document.getElementById('stackSelect').value };
-            localStorage.setItem('poker_pro_state', JSON.stringify(s));
-        }
-
-        function clearPresetStyle() { document.querySelectorAll('.dynamic-preset').forEach(b => b.classList.remove('selected-preset')); }
-        
         async function toggleFinalize() {
             const { data: { user } } = await sbClient.auth.getUser();
             isCurrentRangeFinalized = !isCurrentRangeFinalized;
@@ -353,7 +339,37 @@
             i.innerText = isCurrentRangeFinalized ? "✅" : "⚪";
         }
 
-        function toggleQuiz() { quizActive = !quizActive; document.getElementById('quizSection').style.display = quizActive ? 'block' : 'none'; document.getElementById('pokerGrid').style.display = quizActive ? 'none' : 'grid'; }
+        function saveState() {
+            const s = { tab: currentTab, pos: document.getElementById('posSelect').value, stack: document.getElementById('stackSelect').value };
+            localStorage.setItem('poker_pro_state', JSON.stringify(s));
+        }
+
+        async function resetCurrentRange() {
+            if(!confirm("Effacer ?")) return;
+            const { data: { user } } = await sbClient.auth.getUser();
+            await sbClient.from('ranges').delete().eq('user_id', user.id).eq('position', document.getElementById('posSelect').value).eq('situation', currentTab).eq('vs_position', (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY')).eq('stack_depth', parseInt(document.getElementById('stackSelect').value));
+            refreshData();
+        }
+
+        function clearPresetStyle() { document.querySelectorAll('.dynamic-preset').forEach(b => b.classList.remove('selected-preset')); }
+
+        // QUIZ
+        function toggleQuiz() {
+            quizActive = !quizActive;
+            document.getElementById('quizSection').style.display = quizActive ? 'block' : 'none';
+            document.getElementById('pokerGrid').style.display = quizActive ? 'none' : 'grid';
+            if(quizActive) {
+                buildPalette('quizOptions');
+                nextQuizHand();
+            }
+        }
+
+        function nextQuizHand() {
+            const cells = Array.from(document.querySelectorAll('.cell'));
+            const randomCell = cells[Math.floor(Math.random() * cells.length)];
+            document.getElementById('quizHand').innerText = randomCell.dataset.hand;
+            document.getElementById('quizHand').dataset.correct = randomCell.className.replace('cell ', '');
+        }
     </script>
 </body>
 </html>
