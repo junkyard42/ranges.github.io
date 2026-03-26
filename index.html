@@ -514,7 +514,47 @@
             }, 600); 
         }
         function copyCurrentRange() { copiedData = Array.from(document.querySelectorAll('.cell')).filter(c => !c.classList.contains('fold')).map(c => ({ hand: c.dataset.hand, action: Array.from(c.classList).find(cls => cls.startsWith('action-')) })); document.getElementById('pasteBtn').style.display = 'block'; }
-        async function pasteRange() { const { data: { user } } = await sbClient.auth.getUser(); const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY'; const upserts = copiedData.map(d => ({ user_id: user.id, hand: d.hand, action: d.action, position: document.getElementById('posSelect').value, situation: currentTab, vs_position: vsPos, stack_depth: parseInt(document.getElementById('stackSelect').value), is_finalized: isCurrentRangeFinalized })); await sbClient.from('ranges').upsert(upserts); refreshData(); }
+
+        async function pasteRange() {
+            const { data: { user } } = await sbClient.auth.getUser();
+            if (!user || !copiedData) return;
+        
+            const pos = document.getElementById('posSelect').value;
+            const situation = currentTab;
+            const vsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
+            const stack = parseInt(document.getElementById('stackSelect').value);
+        
+            // ÉTAPE 1 : Nettoyage total de la destination pour éviter les conflits
+            await sbClient.from('ranges')
+                .delete()
+                .eq('user_id', user.id)
+                .eq('position', pos)
+                .eq('situation', situation)
+                .eq('vs_position', vsPos)
+                .eq('stack_depth', stack);
+        
+            // ÉTAPE 2 : Préparation des nouvelles données
+            const inserts = copiedData.map(d => ({ 
+                user_id: user.id, 
+                hand: d.hand, 
+                action: d.action, 
+                position: pos, 
+                situation: situation, 
+                vs_position: vsPos, 
+                stack_depth: stack, 
+                is_finalized: isCurrentRangeFinalized 
+            }));
+        
+            // ÉTAPE 3 : Insertion massive
+            if (inserts.length > 0) {
+                const { error } = await sbClient.from('ranges').insert(inserts);
+                if (error) console.error("Erreur lors du collage :", error);
+            }
+        
+            // Mise à jour de l'interface
+            refreshData();
+        }
+        
         function exportRange() { const activeHands = Array.from(document.querySelectorAll('.cell')).filter(c => c.classList.contains(currentAction)).map(c => c.dataset.hand); document.getElementById('ioText').value = activeHands.join(', '); }
         
         async function importRange() {
