@@ -401,14 +401,17 @@
             userPresets.forEach(p => {
                 const btn = document.createElement('button');
                 btn.className = 'dynamic-preset';
-                // Couleur selon la situation pour s'y retrouver
-                btn.style.background = p.situation === 'RFI' ? '#2e86de' : (p.situation === 'DEFENSE' ? '#28b463' : '#c0392b');
+                
+                // On utilise la couleur de la BDD (ou celle par défaut)
+                btn.style.background = p.color || '#2e86de'; 
                 btn.style.color = 'white';
                 btn.innerHTML = `${p.label} <span class="delete-btn" onclick="deletePreset('${p.id}', event)">×</span>`;
                 
                 btn.onclick = () => applyPreset(p.situation, p.my_pos, p.vs_pos, btn);
                 
-                // Insérer avant le bouton "+"
+                // ACTIVER LE CLIC DROIT / APPUI LONG
+                setupPresetInteractions(btn, p.id);
+                
                 container.insertBefore(btn, addButton);
             });
         
@@ -640,6 +643,45 @@
                 }
             } 
         });
+
+        let longClickTimer;
+        const colorPicker = document.getElementById('presetColorPicker');
+        let targetPresetId = null;
+        
+        // Gérer le changement de couleur après sélection
+        colorPicker.onchange = async (e) => {
+            const newColor = e.target.value;
+            if (targetPresetId) {
+                // Mise à jour locale
+                const preset = userPresets.find(p => p.id === targetPresetId);
+                if (preset) preset.color = newColor;
+                renderPresets();
+        
+                // Mise à jour BDD
+                await sbClient.from('presets').update({ color: newColor }).eq('id', targetPresetId);
+            }
+        };
+        
+        function setupPresetInteractions(btn, presetId) {
+            // 1. Clic droit (PC)
+            btn.oncontextmenu = (e) => {
+                e.preventDefault();
+                openColorPicker(presetId);
+            };
+        
+            // 2. Appui long (Mobile)
+            btn.ontouchstart = () => {
+                longClickTimer = setTimeout(() => openColorPicker(presetId), 600);
+            };
+            btn.ontouchend = () => clearTimeout(longClickTimer);
+        }
+        
+        function openColorPicker(id) {
+            targetPresetId = id;
+            colorPicker.click(); // Ouvre la palette système
+        }
+        
     </script>
+    <input type="color" id="presetColorPicker" style="display:none">
 </body>
 </html>
