@@ -683,21 +683,29 @@
             const label = prompt("Nom du favori (ex: BTN vs CO) :");
             if (!label) return;
         
+            // On demande la couleur tout de suite après le nom
+            const color = prompt("Couleur du bouton (ex: #3498db, #e74c3c, darkblue, orange) :", "#3498db");
+            if (!color) return;
+        
             const { data: { user } } = await sbClient.auth.getUser();
             
-            // Création immédiate avec une couleur par défaut
+            // On récupère les valeurs actuelles des sélecteurs
+            const currentPos = document.getElementById('posSelect').value;
+            const currentStack = parseInt(document.getElementById('stackSelect').value);
+            const currentVsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
+        
             const { error } = await sbClient.from('presets').insert({
                 user_id: user.id,
                 label: label,
                 situation: currentTab,
-                my_pos: document.getElementById('posSelect').value,
-                vs_pos: (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY',
-                stack_depth: parseInt(document.getElementById('stackSelect').value),
-                color: '#3498db' // Couleur initiale
+                my_pos: currentPos,
+                vs_pos: currentVsPos,
+                stack_depth: currentStack, // Vérifiez bien que ce nom correspond au SQL
+                color: color
             });
         
             if (error) {
-                console.error(error);
+                console.error("Détails erreur:", error);
                 alert("Erreur BDD : " + error.message);
             } else {
                 loadPresets();
@@ -708,14 +716,15 @@
             const newName = prompt("Nouveau nom :", p.label);
             if (newName === null) return;
         
-            const newColor = prompt("Couleur (ex: red, blue, #27ae60) :", p.color);
+            const newColor = prompt("Couleur (ex: red, #27ae60) :", p.color);
             if (newColor === null) return;
         
             const { error } = await sbClient.from('presets')
                 .update({ label: newName, color: newColor })
                 .eq('id', p.id);
         
-            if (!error) loadPresets();
+            if (error) alert("Erreur lors de la modif : " + error.message);
+            else loadPresets();
         }
         
         async function deletePreset(id) {
