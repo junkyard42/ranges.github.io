@@ -384,24 +384,20 @@
             });
         }
 
-        function applyPreset(sit, myPos, vsPos, btnElement) {
-            // On nettoie d'abord tout style existant
+        function applyPreset(sit, myP, vsP, btn, stack) {
             clearPresetStyle();
+            document.getElementById('posSelect').value = myP;
+            updateVsPosOptions();
+            switchTab(sit, true);
+            if (btn) btn.classList.add('selected-preset');
             
-            document.getElementById('posSelect').value = myPos;
-            updateVsPosOptions(); 
-            
-            // On passe skipRefresh à true pour éviter un double appel à refreshData
-            switchTab(sit, true); 
-        
-            if (btnElement) {
-                btnElement.classList.add('selected-preset');
+            if (stack) {
+                document.getElementById('stackSelect').value = stack;
             }
-        
+            
             setTimeout(() => {
-                if (vsPos !== 'ANY') {
-                    const vsSelect = document.getElementById('vsPosSelect');
-                    if (vsSelect) vsSelect.value = vsPos;
+                if (vsP !== 'ANY' && document.getElementById('vsPosSelect')) {
+                    document.getElementById('vsPosSelect').value = vsP;
                 }
                 refreshData();
             }, 50);
@@ -644,8 +640,8 @@
         
                     const btn = document.createElement('button');
                     btn.innerText = p.label;
-                    // On force la couleur de fond
-                    btn.style.setProperty('background-color', p.color || '#3498db', 'important');
+                    // Application de la couleur avec une sécurité
+                    btn.style.backgroundColor = p.color || '#3498db';
                     btn.style.color = 'white';
                     btn.style.padding = '8px 12px';
                     btn.style.border = 'none';
@@ -654,23 +650,26 @@
                     btn.style.fontWeight = 'bold';
                     btn.style.cursor = 'pointer';
                     
+                    // Appliquer le favori au clic
                     btn.onclick = () => applyPreset(p.situation, p.my_pos, p.vs_pos, btn, p.stack_depth);
         
-                    // GESTION MOBILE (Appui long) & PC (Clic droit)
-                    const handleEdit = (e) => { e.preventDefault(); editPreset(p); };
-                    
-                    btn.oncontextmenu = handleEdit; // Clic droit PC
-                    
-                    btn.ontouchstart = () => longPressTimer = setTimeout(() => editPreset(p), 700);
+                    // GESTION CLIC DROIT / APPUI LONG pour modifier
+                    const triggerEdit = (e) => {
+                        if (e) e.preventDefault();
+                        editPreset(p);
+                    };
+        
+                    btn.oncontextmenu = triggerEdit; // Clic droit
+                    btn.ontouchstart = () => longPressTimer = setTimeout(triggerEdit, 800); // Appui long mobile
                     btn.ontouchend = () => clearTimeout(longPressTimer);
         
-                    // Bouton de suppression (La petite croix)
+                    // Petite croix de suppression
                     const delBtn = document.createElement('button');
                     delBtn.className = 'delete-preset-btn';
                     delBtn.innerHTML = '×';
-                    delBtn.onclick = (e) => { 
-                        e.stopPropagation(); 
-                        if(confirm(`Supprimer "${p.label}" ?`)) deletePreset(p.id); 
+                    delBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if(confirm(`Supprimer "${p.label}" ?`)) deletePreset(p.id);
                     };
         
                     wrapper.appendChild(btn);
@@ -681,43 +680,48 @@
         }
         
         async function addCurrentAsPreset() {
-            const label = prompt("Nom du favori (ex: BTN 40bb) :");
+            const label = prompt("Nom du favori (ex: BTN vs CO) :");
             if (!label) return;
         
-            const picker = document.getElementById('presetColorPicker');
-            picker.onchange = async () => {
-                const { data: { user } } = await sbClient.auth.getUser();
-                await sbClient.from('presets').insert({
-                    user_id: user.id,
-                    label: label,
-                    situation: currentTab,
-                    my_pos: document.getElementById('posSelect').value,
-                    vs_pos: (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY',
-                    stack_depth: parseInt(document.getElementById('stackSelect').value),
-                    color: picker.value
-                });
+            const { data: { user } } = await sbClient.auth.getUser();
+            
+            // Création immédiate avec une couleur par défaut
+            const { error } = await sbClient.from('presets').insert({
+                user_id: user.id,
+                label: label,
+                situation: currentTab,
+                my_pos: document.getElementById('posSelect').value,
+                vs_pos: (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY',
+                stack_depth: parseInt(document.getElementById('stackSelect').value),
+                color: '#3498db' // Couleur initiale
+            });
+        
+            if (error) {
+                console.error(error);
+                alert("Erreur BDD : " + error.message);
+            } else {
                 loadPresets();
-            };
-            picker.click();
+            }
         }
         
         async function editPreset(p) {
-            const newName = prompt("Modifier le nom :", p.label);
+            const newName = prompt("Nouveau nom :", p.label);
             if (newName === null) return;
-            
-            const picker = document.getElementById('presetColorPicker');
-            picker.value = p.color;
-            picker.onchange = async () => {
-                await sbClient.from('presets').update({ label: newName, color: picker.value }).eq('id', p.id);
-                loadPresets();
-            };
-            picker.click();
+        
+            const newColor = prompt("Couleur (ex: red, blue, #27ae60) :", p.color);
+            if (newColor === null) return;
+        
+            const { error } = await sbClient.from('presets')
+                .update({ label: newName, color: newColor })
+                .eq('id', p.id);
+        
+            if (!error) loadPresets();
         }
         
         async function deletePreset(id) {
             await sbClient.from('presets').delete().eq('id', id);
             loadPresets();
-        }
+        } //fin favoris
         
         sbClient.auth.onAuthStateChange((event, session) => { 
             if (session) { 
