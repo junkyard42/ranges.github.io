@@ -62,6 +62,37 @@
         .quick-presets { display: flex; gap: 6px; margin-bottom: 15px; width: 100%; }
         .quick-presets button { flex: 1; border: none; border-radius: 6px; font-size: 10px; cursor: pointer; padding: 10px 5px; white-space: nowrap; font-weight: bold; transition: transform 0.1s; }
         .quick-presets button.selected-preset { box-shadow: inset 0 0 0 4px #f1c40f !important; transform: scale(1.02); filter: brightness(1.2); }
+       
+        /* Personnalisation des favoris */
+        .preset-btn-container { 
+            position: relative; 
+            display: inline-block; 
+        }
+        .delete-preset-btn { 
+            position: absolute; 
+            top: -5px; 
+            right: -5px; 
+            background: #e74c3c; 
+            color: white; 
+            border: none; 
+            border-radius: 50%; 
+            width: 16px; 
+            height: 16px; 
+            font-size: 10px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 5;
+            border: 1px solid #1e1e1e;
+            font-weight: bold;
+        }
+        /* Empêcher la sélection de texte lors de l'appui long sur mobile */
+        #presetGroup button { 
+            -webkit-touch-callout: none; 
+            -webkit-user-select: none; 
+            user-select: none; 
+        }
         
         #login-overlay { position: fixed; inset: 0; background: #121212; display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 15px; }
         input { padding: 12px; border-radius: 6px; border: 1px solid #333; width: 250px; background: #1e1e1e; color: white; }
@@ -84,20 +115,24 @@
         </div>
 
         <div class="controls">
-            <div style="display: flex; flex-direction: column; gap: 5px;">
-                <label style="font-size: 11px; color: #f39c12; font-weight: bold;">TAILLE DU STACK</label>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 10px; color: #f39c12; font-weight: bold; text-transform: uppercase;">Profondeur du Stack</label>
                 <select id="stackSelect" onchange="clearPresetStyle(); refreshData()"></select>
             </div>
-
-            <div class="quick-presets" id="presetGroup">
-                <button onclick="applyPreset('RFI', 'BTN', 'ANY', this)" style="background: #2e86de; color: white;">🔥 RFI BTN</button>
-                <button onclick="applyPreset('RFI', 'SB', 'ANY', this)" style="background: #d35400; color: white;">🔥 RFI SB</button>
-                <button onclick="applyPreset('DEFENSE', 'BB', 'BTN', this)" style="background: #28b463; color: white;">🎯 BB vs BTN</button>
-                <button onclick="applyPreset('PUSH', 'SB', 'ANY', this)" style="background: #c0392b; color: white;">⚡ PUSH SB</button>
+        
+            <div style="display: flex; flex-direction: column; gap: 5px; margin: 10px 0;">
+                <label style="font-size: 10px; color: #2ecc71; font-weight: bold; text-transform: uppercase;">Mes Favoris</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <div id="presetGroup" style="display: flex; gap: 8px; flex-wrap: wrap; flex: 1;">
+                        </div>
+                    <button onclick="addCurrentAsPreset()" style="background: #27ae60; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 20px; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">+</button>
+                </div>
             </div>
             
+            <input type="color" id="presetColorPicker" style="display:none;">
+        
             <div style="display: flex; flex-direction: column; gap: 4px;">
-                <label style="font-size: 10px; color: #3498db; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">MA POSITION</label>
+                <label style="font-size: 10px; color: #3498db; font-weight: bold; text-transform: uppercase;">Ma Position</label>
                 <select id="posSelect" onchange="clearPresetStyle(); updateVsPosOptions(); refreshData();">
                     <option value="UTG">UTG</option><option value="UTG+1">UTG+1</option>
                     <option value="MP">MP</option><option value="HJ">HJ</option>
@@ -105,9 +140,9 @@
                     <option value="SB">SB</option><option value="BB">BB</option>
                 </select>
             </div>
-
+        
             <div id="vsPosContainer" style="display: none; flex-direction: column; gap: 4px;">
-                <label style="font-size: 10px; color: #e74c3c; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">VS OPEN DE</label>
+                <label style="font-size: 10px; color: #e74c3c; font-weight: bold; text-transform: uppercase;">Vs Open de</label>
                 <select id="vsPosSelect" onchange="refreshData();"></select>
             </div>
 
@@ -591,9 +626,103 @@
         async function resetCurrentRange() { if (!confirm("Vider cette range ?")) return; const { data: { user } } = await sbClient.auth.getUser(); await sbClient.from('ranges').delete().eq('user_id', user.id).eq('position', document.getElementById('posSelect').value).eq('situation', currentTab).eq('vs_position', (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY')).eq('stack_depth', parseInt(document.getElementById('stackSelect').value)); refreshData(); }
         async function signIn() { const { error } = await sbClient.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('password').value }); if (error) alert(error.message); }
 
+        //Gestion de la personnalisation des favoris
+        let longPressTimer;
+
+        async function loadPresets() {
+            const { data: { user } } = await sbClient.auth.getUser();
+            if (!user) return;
+        
+            const { data: presets } = await sbClient.from('presets').select('*').order('created_at', { ascending: true });
+            const container = document.getElementById('presetGroup');
+            container.innerHTML = '';
+        
+            if (presets) {
+                presets.forEach(p => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'preset-btn-container';
+        
+                    const btn = document.createElement('button');
+                    btn.innerText = p.label;
+                    // On force la couleur de fond
+                    btn.style.setProperty('background-color', p.color || '#3498db', 'important');
+                    btn.style.color = 'white';
+                    btn.style.padding = '8px 12px';
+                    btn.style.border = 'none';
+                    btn.style.borderRadius = '6px';
+                    btn.style.fontSize = '10px';
+                    btn.style.fontWeight = 'bold';
+                    btn.style.cursor = 'pointer';
+                    
+                    btn.onclick = () => applyPreset(p.situation, p.my_pos, p.vs_pos, btn, p.stack_depth);
+        
+                    // GESTION MOBILE (Appui long) & PC (Clic droit)
+                    const handleEdit = (e) => { e.preventDefault(); editPreset(p); };
+                    
+                    btn.oncontextmenu = handleEdit; // Clic droit PC
+                    
+                    btn.ontouchstart = () => longPressTimer = setTimeout(() => editPreset(p), 700);
+                    btn.ontouchend = () => clearTimeout(longPressTimer);
+        
+                    // Bouton de suppression (La petite croix)
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'delete-preset-btn';
+                    delBtn.innerHTML = '×';
+                    delBtn.onclick = (e) => { 
+                        e.stopPropagation(); 
+                        if(confirm(`Supprimer "${p.label}" ?`)) deletePreset(p.id); 
+                    };
+        
+                    wrapper.appendChild(btn);
+                    wrapper.appendChild(delBtn);
+                    container.appendChild(wrapper);
+                });
+            }
+        }
+        
+        async function addCurrentAsPreset() {
+            const label = prompt("Nom du favori (ex: BTN 40bb) :");
+            if (!label) return;
+        
+            const picker = document.getElementById('presetColorPicker');
+            picker.onchange = async () => {
+                const { data: { user } } = await sbClient.auth.getUser();
+                await sbClient.from('presets').insert({
+                    user_id: user.id,
+                    label: label,
+                    situation: currentTab,
+                    my_pos: document.getElementById('posSelect').value,
+                    vs_pos: (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY',
+                    stack_depth: parseInt(document.getElementById('stackSelect').value),
+                    color: picker.value
+                });
+                loadPresets();
+            };
+            picker.click();
+        }
+        
+        async function editPreset(p) {
+            const newName = prompt("Modifier le nom :", p.label);
+            if (newName === null) return;
+            
+            const picker = document.getElementById('presetColorPicker');
+            picker.value = p.color;
+            picker.onchange = async () => {
+                await sbClient.from('presets').update({ label: newName, color: picker.value }).eq('id', p.id);
+                loadPresets();
+            };
+            picker.click();
+        }
+        
+        async function deletePreset(id) {
+            await sbClient.from('presets').delete().eq('id', id);
+            loadPresets();
+        }
+        
         sbClient.auth.onAuthStateChange((event, session) => { 
             if (session) { 
-                document.getElementById('login-overlay').style.display = 'none'; 
+                document.getElementById('login-overlay').style.display = 'none';
+                loadPresets(); //affichage des boutons personnalisés
                 const savedState = localStorage.getItem('poker_pro_state');
                 if (savedState) {
                     const state = JSON.parse(savedState);
