@@ -176,7 +176,7 @@
         const actionsStd = [
             { id: 'fold', label: 'FOLD', class: 'fold' },
             { id: 'action-blue', label: 'RAISE/FOLD', class: 'action-blue' }, { id: 'action-green', label: 'RAISE/CALL', class: 'action-green' },
-            { id: 'action-orange', label: '3/4-BET', class: 'action-orange' }, { id: 'action-purple', label: 'ALL-IN', class: 'action-purple' }
+            { id: 'action-orange', label: 'RAISE/4-BET', class: 'action-orange' }, { id: 'action-purple', label: 'ALL-IN', class: 'action-purple' }
         ];
 
         const actionsPush = [
@@ -222,30 +222,55 @@
 
         function buildPalette(targetId, isQuiz = false) {
             const pos = document.getElementById('posSelect').value;
+            const vsPos = document.getElementById('vsPosSelect') ? document.getElementById('vsPosSelect').value : 'ANY';
             const container = document.getElementById(targetId);
             if (!container) return;
-            container.innerHTML = '';
             
-            let list;
-            if (currentTab === 'PUSH') {
+            container.innerHTML = '';
+            let list = [];
+        
+            // Cas spécifique : BB contre SB (Limp) en mode DEFENSE
+            if (currentTab === 'DEFENSE' && pos === 'BB' && vsPos === 'SB_LIMP') {
+                list = [
+                    {id:'action-l-3bet', label:'CHECK', class:'action-l-3bet'},
+                    {id:'action-blue', label:'RAISE/FOLD', class:'action-blue'},
+                    {id:'action-green', label:'RAISE/CALL', class:'action-green'},
+                    {id:'action-orange', label:'RAISE/4BET', class:'action-orange'},
+                    {id:'action-purple', label:'ALL-IN', class:'action-purple'}
+                ];
+            } 
+            // Cas PUSH OR FOLD
+            else if (currentTab === 'PUSH') {
                 list = actionsPush;
-                container.className = 'palette std-mode';
-            } else {
-                const isSBMode = (pos === 'SB' && currentTab === 'RFI');
-                list = isSBMode ? actionsSB : actionsStd;
-                container.className = isSBMode ? 'palette sb-mode' : 'palette std-mode';
             }
-
+            // Cas RFI SB (Spécifique SB avec tes 9 boutons)
+            else if (pos === 'SB' && currentTab === 'RFI') {
+                list = actionsSB;
+            }
+            // Cas par défaut (dont DEFENSE classique)
+            else if (currentTab === 'DEFENSE') {
+                list = [
+                    {id:'fold', label:'FOLD', class:'fold'},
+                    {id:'action-green', label:'CALL', class:'action-green'},
+                    {id:'action-blue', label:'3BET/FOLD', class:'action-blue'},
+                    {id:'action-orange', label:'3BET/CALL', class:'action-orange'},
+                    {id:'action-purple', label:'ALL-IN', class:'action-purple'}
+                ];
+            }
+            else {
+                list = actionsStd;
+            }
+        
+            container.className = (list.length > 5) ? 'palette sb-mode' : 'palette std-mode';
+            
             list.forEach(a => {
                 const btn = document.createElement('div');
                 btn.className = `tool ${a.class} ${!isQuiz && currentAction === a.id ? 'active' : ''}`;
                 btn.innerText = a.label;
-                // ON AJOUTE CETTE LIGNE pour gérer l'indicateur visuel
                 btn.dataset.action = a.id;
                 btn.onclick = () => isQuiz ? checkQuiz(a.id) : setAction(a.id, btn);
                 container.appendChild(btn);
             });
-            if (!list.find(a => a.id === currentAction)) currentAction = 'fold';
         }
 
         function setAction(id, btn) {
