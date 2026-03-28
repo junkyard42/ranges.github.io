@@ -100,7 +100,7 @@
                 <label style="font-size: 10px; color: #3498db; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">MA POSITION</label>
                 <select id="posSelect" onchange="clearPresetStyle(); updateVsPosOptions(); refreshData();">
                     <option value="UTG">UTG</option><option value="UTG+1">UTG+1</option>
-                    <option value="MP">MP</option><option value="HJ">HJ</option>
+                    <option value="MP">LJ</option><option value="HJ">HJ</option>
                     <option value="CO">CO</option><option value="BTN">BTN</option>
                     <option value="SB">SB</option><option value="BB">BB</option>
                 </select>
@@ -175,8 +175,8 @@
 
         const actionsStd = [
             { id: 'fold', label: 'FOLD', class: 'fold' },
-            { id: 'action-blue', label: 'RAISE/FOLD', class: 'action-blue' }, { id: 'action-green', label: 'RAISE/CALL', class: 'action-green' },
-            { id: 'action-orange', label: 'RAISE/4-BET', class: 'action-orange' }, { id: 'action-purple', label: 'ALL-IN', class: 'action-purple' }
+            { id: 'action-blue', label: 'R-FOLD', class: 'action-blue' }, { id: 'action-green', label: 'R-CALL', class: 'action-green' },
+            { id: 'action-orange', label: 'R-4BET', class: 'action-orange' }, { id: 'action-purple', label: 'R-ALL-IN', class: 'action-purple' }
         ];
 
         const actionsPush = [
@@ -233,9 +233,9 @@
             if (currentTab === 'DEFENSE' && pos === 'BB' && vsPos === 'SB_LIMP') {
                 list = [
                     {id:'action-l-3bet', label:'CHECK', class:'action-l-3bet'},
-                    {id:'action-blue', label:'RAISE/FOLD', class:'action-blue'},
-                    {id:'action-green', label:'RAISE/CALL', class:'action-green'},
-                    {id:'action-orange', label:'RAISE/4BET', class:'action-orange'},
+                    {id:'action-blue', label:'R-FOLD', class:'action-blue'},
+                    {id:'action-green', label:'R-CALL', class:'action-green'},
+                    {id:'action-orange', label:'R-4BET', class:'action-orange'},
                     {id:'action-purple', label:'ALL-IN', class:'action-purple'}
                 ];
             } 
@@ -321,42 +321,54 @@
         }
 
         function switchTab(tab, skipRefresh = false) {
-            clearPresetStyle(); 
-            currentTab = tab;
-            
-            // Mise à jour visuelle des onglets
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
-            
-            const s = document.getElementById('stackSelect');
-            const vsContainer = document.getElementById('vsPosContainer');
-        
-            if (tab === 'PUSH') {
-                // Paliers spécifiques au mode Push or Fold (1 à 15 BB)
-                s.innerHTML = Array.from({length:15}, (_,i)=>`<option value="${15-i}">${15-i} BB</option>`).join('');
-                vsContainer.style.display = 'none';
-            } else {
-                // Restauration de tes paliers précis pour RFI et DEFENSE
-                s.innerHTML = `
-                    <option value="100">100 BB</option>
-                    <option value="80">80 BB</option>
-                    <option value="60">60 BB</option>
-                    <option value="40">40 BB</option>
-                    <option value="30">30 BB</option>
-                    <option value="20">20 BB</option>
-                    <option value="14">14 BB</option>
-                    <option value="10">10 BB</option>
-                `;
-                // Affichage du label "Vs Open de" uniquement en mode DEFENSE
-                vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none';
-            }
-            
-            updateVsPosOptions(); 
-            if (!skipRefresh) refreshData();
-        }
+			clearPresetStyle(); 
+			currentTab = tab;
+			
+			// Mise à jour visuelle des onglets
+			document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+			document.getElementById('tab-' + tab).classList.add('active');
+			
+			const s = document.getElementById('stackSelect');
+			const posSelect = document.getElementById('posSelect'); // On récupère le sélecteur de position
+			const vsContainer = document.getElementById('vsPosContainer');
+
+			// --- LOGIQUE DE RETRAIT DE LA BB ---
+			if (tab === 'RFI' || tab === 'PUSH') {
+				// Si on arrive sur RFI/PUSH alors qu'on était en BB, on bascule par défaut sur SB
+				if (posSelect.value === 'BB') {
+					posSelect.value = 'SB';
+				}
+				// On cache l'option BB
+				posSelect.querySelector('option[value="BB"]').style.display = 'none';
+			} else {
+				// On réaffiche la BB pour le mode DEFENSE
+				posSelect.querySelector('option[value="BB"]').style.display = 'block';
+			}
+			// -----------------------------------
+
+			if (tab === 'PUSH') {
+				s.innerHTML = Array.from({length:15}, (_,i)=>`<option value="${15-i}">${15-i} BB</option>`).join('');
+				vsContainer.style.display = 'none';
+			} else {
+				s.innerHTML = `
+					<option value="100">100 BB</option>
+					<option value="80">80 BB</option>
+					<option value="60">60 BB</option>
+					<option value="40">40 BB</option>
+					<option value="30">30 BB</option>
+					<option value="20">20 BB</option>
+					<option value="14">14 BB</option>
+					<option value="10">10 BB</option>
+				`;
+				vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none';
+			}
+			
+			updateVsPosOptions(); 
+			if (!skipRefresh) refreshData();
+		}
 
         function updateVsPosOptions() {
-            const POSITION_ORDER = ["UTG", "UTG+1", "MP", "HJ", "CO", "BTN", "SB", "BB"];
+            const POSITION_ORDER = ["UTG", "UTG+1", "LJ", "HJ", "CO", "BTN", "SB", "BB"];
             const myPos = document.getElementById('posSelect').value;
             const myIndex = POSITION_ORDER.indexOf(myPos);
             let html = "";
