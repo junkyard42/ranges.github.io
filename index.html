@@ -62,6 +62,45 @@
         .quick-presets { display: flex; gap: 6px; margin-bottom: 15px; width: 100%; }
         .quick-presets button { flex: 1; border: none; border-radius: 6px; font-size: 10px; cursor: pointer; padding: 10px 5px; white-space: nowrap; font-weight: bold; transition: transform 0.1s; }
         .quick-presets button.selected-preset { box-shadow: inset 0 0 0 4px #f1c40f !important; transform: scale(1.02); filter: brightness(1.2); }
+       
+        /* Personnalisation des favoris */
+        .preset-btn-container { 
+            position: relative; 
+            display: inline-block; 
+        }
+        .delete-preset-btn { 
+            position: absolute; 
+            top: -5px; 
+            right: -5px; 
+            background: #e74c3c; 
+            color: white; 
+            border: none; 
+            border-radius: 50%; 
+            width: 16px; 
+            height: 16px; 
+            font-size: 10px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 5;
+            border: 1px solid #1e1e1e;
+            font-weight: bold;
+        }
+        /* Empêcher la sélection de texte lors de l'appui long sur mobile */
+        #presetGroup button { 
+            -webkit-touch-callout: none; 
+            -webkit-user-select: none; 
+            user-select: none; 
+        }
+		
+		/* Contour doré pour le favori actif */
+		.selected-preset { 
+			outline: 2px solid #f1c40f !important; 
+			outline-offset: 2px;
+			transform: scale(1.05);
+			transition: all 0.2s ease;
+		}
         
         #login-overlay { position: fixed; inset: 0; background: #121212; display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 15px; }
         input { padding: 12px; border-radius: 6px; border: 1px solid #333; width: 250px; background: #1e1e1e; color: white; }
@@ -84,31 +123,35 @@
         </div>
 
         <div class="controls">
-            <div style="display: flex; flex-direction: column; gap: 5px;">
-                <label style="font-size: 11px; color: #f39c12; font-weight: bold;">TAILLE DU STACK</label>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 10px; color: #f39c12; font-weight: bold; text-transform: uppercase;">Profondeur du Stack</label>
                 <select id="stackSelect" onchange="clearPresetStyle(); refreshData()"></select>
             </div>
-
-            <div class="quick-presets" id="presetGroup">
-                <button onclick="applyPreset('RFI', 'BTN', 'ANY', this)" style="background: #2e86de; color: white;">🔥 RFI BTN</button>
-                <button onclick="applyPreset('RFI', 'SB', 'ANY', this)" style="background: #d35400; color: white;">🔥 RFI SB</button>
-                <button onclick="applyPreset('DEFENSE', 'BB', 'BTN', this)" style="background: #28b463; color: white;">🎯 BB vs BTN</button>
-                <button onclick="applyPreset('PUSH', 'SB', 'ANY', this)" style="background: #c0392b; color: white;">⚡ PUSH SB</button>
+        
+            <div style="display: flex; flex-direction: column; gap: 5px; margin: 10px 0;">
+                <label style="font-size: 10px; color: #2ecc71; font-weight: bold; text-transform: uppercase;">Mes Favoris</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <div id="presetGroup" style="display: flex; gap: 8px; flex-wrap: wrap; flex: 1;">
+                        </div>
+                    <button onclick="addCurrentAsPreset()" style="background: #27ae60; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 20px; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">+</button>
+                </div>
             </div>
             
+            <input type="color" id="presetColorPicker" style="display:none;">
+        
             <div style="display: flex; flex-direction: column; gap: 4px;">
-                <label style="font-size: 10px; color: #3498db; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">MA POSITION</label>
+                <label style="font-size: 10px; color: #3498db; font-weight: bold; text-transform: uppercase;">Ma Position</label>
                 <select id="posSelect" onchange="clearPresetStyle(); updateVsPosOptions(); refreshData();">
                     <option value="UTG">UTG</option><option value="UTG+1">UTG+1</option>
-                    <option value="MP">LJ</option><option value="HJ">HJ</option>
+                    <option value="MP">MP</option><option value="HJ">HJ</option>
                     <option value="CO">CO</option><option value="BTN">BTN</option>
                     <option value="SB">SB</option><option value="BB">BB</option>
                 </select>
             </div>
-
+        
             <div id="vsPosContainer" style="display: none; flex-direction: column; gap: 4px;">
-                <label style="font-size: 10px; color: #e74c3c; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">VS OPEN DE</label>
-                <select id="vsPosSelect" onchange="refreshData();"></select>
+                <label style="font-size: 10px; color: #e74c3c; font-weight: bold; text-transform: uppercase;">Vs Open de</label>
+                <select id="vsPosSelect" onchange="clearPresetStyle(); refreshData();"></select>
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 5px;">
@@ -175,8 +218,8 @@
 
         const actionsStd = [
             { id: 'fold', label: 'FOLD', class: 'fold' },
-            { id: 'action-blue', label: 'R-FOLD', class: 'action-blue' }, { id: 'action-green', label: 'R-CALL', class: 'action-green' },
-            { id: 'action-orange', label: 'R-4BET', class: 'action-orange' }, { id: 'action-purple', label: 'R-ALL-IN', class: 'action-purple' }
+            { id: 'action-blue', label: 'RAISE/FOLD', class: 'action-blue' }, { id: 'action-green', label: 'RAISE/CALL', class: 'action-green' },
+            { id: 'action-orange', label: '3/4-BET', class: 'action-orange' }, { id: 'action-purple', label: 'ALL-IN', class: 'action-purple' }
         ];
 
         const actionsPush = [
@@ -222,55 +265,30 @@
 
         function buildPalette(targetId, isQuiz = false) {
             const pos = document.getElementById('posSelect').value;
-            const vsPos = document.getElementById('vsPosSelect') ? document.getElementById('vsPosSelect').value : 'ANY';
             const container = document.getElementById(targetId);
             if (!container) return;
-            
             container.innerHTML = '';
-            let list = [];
-        
-            // Cas spécifique : BB contre SB (Limp) en mode DEFENSE
-            if (currentTab === 'DEFENSE' && pos === 'BB' && vsPos === 'SB_LIMP') {
-                list = [
-                    {id:'action-l-3bet', label:'CHECK', class:'action-l-3bet'},
-                    {id:'action-blue', label:'R-FOLD', class:'action-blue'},
-                    {id:'action-green', label:'R-CALL', class:'action-green'},
-                    {id:'action-orange', label:'R-4BET', class:'action-orange'},
-                    {id:'action-purple', label:'ALL-IN', class:'action-purple'}
-                ];
-            } 
-            // Cas PUSH OR FOLD
-            else if (currentTab === 'PUSH') {
-                list = actionsPush;
-            }
-            // Cas RFI SB (Spécifique SB avec tes 9 boutons)
-            else if (pos === 'SB' && currentTab === 'RFI') {
-                list = actionsSB;
-            }
-            // Cas par défaut (dont DEFENSE classique)
-            else if (currentTab === 'DEFENSE') {
-                list = [
-                    {id:'fold', label:'FOLD', class:'fold'},
-                    {id:'action-green', label:'CALL', class:'action-green'},
-                    {id:'action-blue', label:'3BET/FOLD', class:'action-blue'},
-                    {id:'action-orange', label:'3BET/CALL', class:'action-orange'},
-                    {id:'action-purple', label:'ALL-IN', class:'action-purple'}
-                ];
-            }
-            else {
-                list = actionsStd;
-            }
-        
-            container.className = (list.length > 5) ? 'palette sb-mode' : 'palette std-mode';
             
+            let list;
+            if (currentTab === 'PUSH') {
+                list = actionsPush;
+                container.className = 'palette std-mode';
+            } else {
+                const isSBMode = (pos === 'SB' && currentTab === 'RFI');
+                list = isSBMode ? actionsSB : actionsStd;
+                container.className = isSBMode ? 'palette sb-mode' : 'palette std-mode';
+            }
+
             list.forEach(a => {
                 const btn = document.createElement('div');
                 btn.className = `tool ${a.class} ${!isQuiz && currentAction === a.id ? 'active' : ''}`;
                 btn.innerText = a.label;
+                // ON AJOUTE CETTE LIGNE pour gérer l'indicateur visuel
                 btn.dataset.action = a.id;
                 btn.onclick = () => isQuiz ? checkQuiz(a.id) : setAction(a.id, btn);
                 container.appendChild(btn);
             });
+            if (!list.find(a => a.id === currentAction)) currentAction = 'fold';
         }
 
         function setAction(id, btn) {
@@ -321,54 +339,42 @@
         }
 
         function switchTab(tab, skipRefresh = false) {
-			clearPresetStyle(); 
-			currentTab = tab;
-			
-			// Mise à jour visuelle des onglets
-			document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-			document.getElementById('tab-' + tab).classList.add('active');
-			
-			const s = document.getElementById('stackSelect');
-			const posSelect = document.getElementById('posSelect'); // On récupère le sélecteur de position
-			const vsContainer = document.getElementById('vsPosContainer');
-
-			// --- LOGIQUE DE RETRAIT DE LA BB ---
-			if (tab === 'RFI' || tab === 'PUSH') {
-				// Si on arrive sur RFI/PUSH alors qu'on était en BB, on bascule par défaut sur SB
-				if (posSelect.value === 'BB') {
-					posSelect.value = 'SB';
-				}
-				// On cache l'option BB
-				posSelect.querySelector('option[value="BB"]').style.display = 'none';
-			} else {
-				// On réaffiche la BB pour le mode DEFENSE
-				posSelect.querySelector('option[value="BB"]').style.display = 'block';
-			}
-			// -----------------------------------
-
-			if (tab === 'PUSH') {
-				s.innerHTML = Array.from({length:15}, (_,i)=>`<option value="${15-i}">${15-i} BB</option>`).join('');
-				vsContainer.style.display = 'none';
-			} else {
-				s.innerHTML = `
-					<option value="100">100 BB</option>
-					<option value="80">80 BB</option>
-					<option value="60">60 BB</option>
-					<option value="40">40 BB</option>
-					<option value="30">30 BB</option>
-					<option value="20">20 BB</option>
-					<option value="14">14 BB</option>
-					<option value="10">10 BB</option>
-				`;
-				vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none';
-			}
-			
-			updateVsPosOptions(); 
-			if (!skipRefresh) refreshData();
-		}
+            clearPresetStyle(); 
+            currentTab = tab;
+            
+            // Mise à jour visuelle des onglets
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            
+            const s = document.getElementById('stackSelect');
+            const vsContainer = document.getElementById('vsPosContainer');
+        
+            if (tab === 'PUSH') {
+                // Paliers spécifiques au mode Push or Fold (1 à 15 BB)
+                s.innerHTML = Array.from({length:15}, (_,i)=>`<option value="${15-i}">${15-i} BB</option>`).join('');
+                vsContainer.style.display = 'none';
+            } else {
+                // Restauration de tes paliers précis pour RFI et DEFENSE
+                s.innerHTML = `
+                    <option value="100">100 BB</option>
+                    <option value="80">80 BB</option>
+                    <option value="60">60 BB</option>
+                    <option value="40">40 BB</option>
+                    <option value="30">30 BB</option>
+                    <option value="20">20 BB</option>
+                    <option value="14">14 BB</option>
+                    <option value="10">10 BB</option>
+                `;
+                // Affichage du label "Vs Open de" uniquement en mode DEFENSE
+                vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none';
+            }
+            
+            updateVsPosOptions(); 
+            if (!skipRefresh) refreshData();
+        }
 
         function updateVsPosOptions() {
-            const POSITION_ORDER = ["UTG", "UTG+1", "LJ", "HJ", "CO", "BTN", "SB", "BB"];
+            const POSITION_ORDER = ["UTG", "UTG+1", "MP", "HJ", "CO", "BTN", "SB", "BB"];
             const myPos = document.getElementById('posSelect').value;
             const myIndex = POSITION_ORDER.indexOf(myPos);
             let html = "";
@@ -386,24 +392,24 @@
             });
         }
 
-        function applyPreset(sit, myPos, vsPos, btnElement) {
-            // On nettoie d'abord tout style existant
+        function applyPreset(sit, myP, vsP, btn, stack) {
             clearPresetStyle();
+            document.getElementById('posSelect').value = myP;
+            updateVsPosOptions();
+            switchTab(sit, true);
             
-            document.getElementById('posSelect').value = myPos;
-            updateVsPosOptions(); 
+			// On ajoute le contour doré au bouton sur lequel on vient de cliquer
+			if (btn) {
+				btn.classList.add('selected-preset');
+			}
             
-            // On passe skipRefresh à true pour éviter un double appel à refreshData
-            switchTab(sit, true); 
-        
-            if (btnElement) {
-                btnElement.classList.add('selected-preset');
+            if (stack) {
+                document.getElementById('stackSelect').value = stack;
             }
-        
+            
             setTimeout(() => {
-                if (vsPos !== 'ANY') {
-                    const vsSelect = document.getElementById('vsPosSelect');
-                    if (vsSelect) vsSelect.value = vsPos;
+                if (vsP !== 'ANY' && document.getElementById('vsPosSelect')) {
+                    document.getElementById('vsPosSelect').value = vsP;
                 }
                 refreshData();
             }, 50);
@@ -628,9 +634,120 @@
         async function resetCurrentRange() { if (!confirm("Vider cette range ?")) return; const { data: { user } } = await sbClient.auth.getUser(); await sbClient.from('ranges').delete().eq('user_id', user.id).eq('position', document.getElementById('posSelect').value).eq('situation', currentTab).eq('vs_position', (currentTab === 'DEFENSE' ? document.getElementById('vsPosSelect').value : 'ANY')).eq('stack_depth', parseInt(document.getElementById('stackSelect').value)); refreshData(); }
         async function signIn() { const { error } = await sbClient.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('password').value }); if (error) alert(error.message); }
 
+        //Gestion de la personnalisation des favoris
+        let longPressTimer;
+
+        async function loadPresets() {
+            const { data: { user } } = await sbClient.auth.getUser();
+            if (!user) return;
+        
+            const { data: presets } = await sbClient.from('presets').select('*').order('created_at', { ascending: true });
+            const container = document.getElementById('presetGroup');
+            container.innerHTML = '';
+        
+            if (presets) {
+                presets.forEach(p => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'preset-btn-container';
+        
+                    const btn = document.createElement('button');
+                    btn.innerText = p.label;
+                    // Application de la couleur avec une sécurité
+                    btn.style.backgroundColor = p.color || '#3498db';
+                    btn.style.color = 'white';
+                    btn.style.padding = '8px 12px';
+                    btn.style.border = 'none';
+                    btn.style.borderRadius = '6px';
+                    btn.style.fontSize = '10px';
+                    btn.style.fontWeight = 'bold';
+                    btn.style.cursor = 'pointer';
+                    
+                    // Appliquer le favori au clic
+                    btn.onclick = () => applyPreset(p.situation, p.my_pos, p.vs_pos, btn, p.stack_depth);
+        
+                    // GESTION CLIC DROIT / APPUI LONG pour modifier
+                    const triggerEdit = (e) => {
+                        if (e) e.preventDefault();
+                        editPreset(p);
+                    };
+        
+                    btn.oncontextmenu = triggerEdit; // Clic droit
+                    btn.ontouchstart = () => longPressTimer = setTimeout(triggerEdit, 800); // Appui long mobile
+                    btn.ontouchend = () => clearTimeout(longPressTimer);
+        
+                    // Petite croix de suppression
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'delete-preset-btn';
+                    delBtn.innerHTML = '×';
+                    delBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if(confirm(`Supprimer "${p.label}" ?`)) deletePreset(p.id);
+                    };
+        
+                    wrapper.appendChild(btn);
+                    wrapper.appendChild(delBtn);
+                    container.appendChild(wrapper);
+                });
+            }
+        }
+        
+        async function addCurrentAsPreset() {
+            const label = prompt("Nom du favori (ex: BTN vs CO) :");
+            if (!label) return;
+        
+            // On demande la couleur tout de suite après le nom
+            const color = prompt("Couleur du bouton (ex: #3498db, #e74c3c, darkblue, orange) :", "#3498db");
+            if (!color) return;
+        
+            const { data: { user } } = await sbClient.auth.getUser();
+            
+            // On récupère les valeurs actuelles des sélecteurs
+            const currentPos = document.getElementById('posSelect').value;
+            const currentStack = parseInt(document.getElementById('stackSelect').value);
+            const currentVsPos = (currentTab === 'DEFENSE') ? document.getElementById('vsPosSelect').value : 'ANY';
+        
+            const { error } = await sbClient.from('presets').insert({
+                user_id: user.id,
+                label: label,
+                situation: currentTab,
+                my_pos: currentPos,
+                vs_pos: currentVsPos,
+                stack_depth: currentStack, // Vérifiez bien que ce nom correspond au SQL
+                color: color
+            });
+        
+            if (error) {
+                console.error("Détails erreur:", error);
+                alert("Erreur BDD : " + error.message);
+            } else {
+                loadPresets();
+            }
+        }
+        
+        async function editPreset(p) {
+            const newName = prompt("Nouveau nom :", p.label);
+            if (newName === null) return;
+        
+            const newColor = prompt("Couleur (ex: red, #27ae60) :", p.color);
+            if (newColor === null) return;
+        
+            const { error } = await sbClient.from('presets')
+                .update({ label: newName, color: newColor })
+                .eq('id', p.id);
+        
+            if (error) alert("Erreur lors de la modif : " + error.message);
+            else loadPresets();
+        }
+        
+        async function deletePreset(id) {
+            await sbClient.from('presets').delete().eq('id', id);
+            loadPresets();
+        } //fin favoris
+        
         sbClient.auth.onAuthStateChange((event, session) => { 
             if (session) { 
-                document.getElementById('login-overlay').style.display = 'none'; 
+                document.getElementById('login-overlay').style.display = 'none';
+                loadPresets(); //affichage des boutons personnalisés
                 const savedState = localStorage.getItem('poker_pro_state');
                 if (savedState) {
                     const state = JSON.parse(savedState);
