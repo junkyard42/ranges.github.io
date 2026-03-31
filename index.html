@@ -237,16 +237,13 @@
                 <div id="vsPosBtnGroup" class="button-group-container"></div> 
 				<select id="vsPosSelect" onchange="clearPresetStyle(); refreshData();"></select>
             </div>
-
-            <div style="display: flex; gap: 10px; margin-top: 5px;">
-                <button onclick="copyCurrentRange()" style="flex: 1; padding: 8px; background: #444; color: #fff; border: 1px solid #666; border-radius: 4px; font-size: 11px; cursor: pointer;">📋 Copier</button>
-                <button id="pasteBtn" onclick="pasteRange()" style="flex: 1; padding: 8px; background: #27ae60; color: #fff; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; display: none;">📥 Coller</button>
-            </div>
         </div>
 
         <div id="palette" class="palette"></div>
 
-        <div id="statsPanel" style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <div id="pokerGrid" class="grid"></div>
+		
+		<div id="statsPanel" style="display: flex; gap: 10px; margin-bottom: 10px; margin-top: 10px">
             <div style="flex: 1; background: #2a2a2a; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid #3498db;">
                 <span style="font-size: 10px; color: #888;">VPIP</span>
                 <span id="statVPIP" style="display: block; font-size: 18px; font-weight: bold;">0.0%</span>
@@ -260,8 +257,11 @@
                 <span id="finalizeText" style="display: block; font-size: 10px; color: #888;">BROUILLON</span>
             </div>
         </div>
-
-        <div id="pokerGrid" class="grid"></div>
+		
+		<div style="display: flex; gap: 10px; margin-top: 5px;">
+            <button onclick="copyCurrentRange()" style="flex: 1; padding: 8px; background: #444; color: #fff; border: 1px solid #666; border-radius: 4px; font-size: 11px; cursor: pointer;">📋 Copier</button>
+            <button id="pasteBtn" onclick="pasteRange()" style="flex: 1; padding: 8px; background: #27ae60; color: #fff; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; display: none;">📥 Coller</button>
+        </div>
 
         <div class="io-section">
             <textarea id="ioText" class="io-area" placeholder="Format : AA, 22+, AJs+"></textarea>
