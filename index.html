@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poker Playbook Pro - Ultimate Edition</title>
+    <title>Poker Playbook Pro v1.3</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; user-select: none; }
         .container { background: #1e1e1e; padding: 15px; border-radius: 12px; width: 100%; max-width: 500px; box-sizing: border-box; }
@@ -102,6 +103,22 @@
 			transform: scale(1.05);
 			transition: all 0.2s ease;
 		}
+		
+		.drag-handle {
+			cursor: grab;
+			margin-right: 5px;
+			color: rgba(255,255,255,0.5);
+			font-size: 12px;
+			display: none; /* Caché par défaut */
+		}
+
+		.is-editing .drag-handle {
+			display: inline-block; /* Visible seulement en mode édition */
+		}
+
+		.is-editing .delete-preset-btn {
+			display: none; /* On cache la croix de suppression standard pour ne pas surcharger */
+		}
         
         #login-overlay { position: fixed; inset: 0; background: #121212; display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 15px; }
         input { padding: 12px; border-radius: 6px; border: 1px solid #333; width: 250px; background: #1e1e1e; color: white; }
@@ -130,13 +147,15 @@
             </div>
         
             <div style="display: flex; flex-direction: column; gap: 5px; margin: 10px 0;">
-                <label style="font-size: 10px; color: #2ecc71; font-weight: bold; text-transform: uppercase;">Mes Favoris</label>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <div id="presetGroup" style="display: flex; gap: 8px; flex-wrap: wrap; flex: 1;">
-                        </div>
-                    <button onclick="addCurrentAsPreset()" style="background: #27ae60; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 20px; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">+</button>
-                </div>
-            </div>
+				<div style="display: flex; justify-content: space-between; align-items: center;">
+					<label style="font-size: 10px; color: #2ecc71; font-weight: bold; text-transform: uppercase;">Mes Favoris</label>
+					<button id="btn-toggle-edit" onclick="toggleEditMode()" style="background: #444; color: white; border: none; border-radius: 4px; padding: 2px 8px; font-size: 9px; cursor: pointer;">✏️ Éditer</button>
+				</div>
+				<div style="display: flex; gap: 8px; align-items: center;">
+					<div id="presetGroup" style="display: flex; gap: 8px; flex-wrap: wrap; flex: 1;"></div>
+					<button onclick="addCurrentAsPreset()" style="background: #27ae60; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 20px; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">+</button>
+				</div>
+			</div>
             
             <input type="color" id="presetColorPicker" style="display:none;">
         
@@ -574,6 +593,7 @@
             document.getElementById('quizCount').innerText = questionsDone + 1;
             document.getElementById('quizScore').innerText = score;
         }
+		
         function checkQuiz(userAction) {
             if (!quizActive) return;
         
@@ -610,6 +630,7 @@
                 nextQuizHand();
             }, 600); 
         }
+		
         function copyCurrentRange() { copiedData = Array.from(document.querySelectorAll('.cell')).filter(c => !c.classList.contains('fold')).map(c => ({ hand: c.dataset.hand, action: Array.from(c.classList).find(cls => cls.startsWith('action-')) })); document.getElementById('pasteBtn').style.display = 'block'; }
 
         async function pasteRange() {
@@ -691,59 +712,106 @@
         //Gestion de la personnalisation des favoris
         let longPressTimer;
 
-        async function loadPresets() {
-            const { data: { user } } = await sbClient.auth.getUser();
-            if (!user) return;
-        
-            const { data: presets } = await sbClient.from('presets').select('*').order('created_at', { ascending: true });
-            const container = document.getElementById('presetGroup');
-            container.innerHTML = '';
-        
-            if (presets) {
-                presets.forEach(p => {
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'preset-btn-container';
-        
-                    const btn = document.createElement('button');
-                    btn.innerText = p.label;
-                    // Application de la couleur avec une sécurité
-                    btn.style.backgroundColor = p.color || '#3498db';
-                    btn.style.color = 'white';
-                    btn.style.padding = '8px 12px';
-                    btn.style.border = 'none';
-                    btn.style.borderRadius = '6px';
-                    btn.style.fontSize = '10px';
-                    btn.style.fontWeight = 'bold';
-                    btn.style.cursor = 'pointer';
-                    
-                    // Appliquer le favori au clic
-                    btn.onclick = () => applyPreset(p.situation, p.my_pos, p.vs_pos, btn, p.stack_depth);
-        
-                    // GESTION CLIC DROIT / APPUI LONG pour modifier
-                    const triggerEdit = (e) => {
-                        if (e) e.preventDefault();
-                        editPreset(p);
-                    };
-        
-                    btn.oncontextmenu = triggerEdit; // Clic droit
-                    btn.ontouchstart = () => longPressTimer = setTimeout(triggerEdit, 800); // Appui long mobile
-                    btn.ontouchend = () => clearTimeout(longPressTimer);
-        
-                    // Petite croix de suppression
-                    const delBtn = document.createElement('button');
-                    delBtn.className = 'delete-preset-btn';
-                    delBtn.innerHTML = '×';
-                    delBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        if(confirm(`Supprimer "${p.label}" ?`)) deletePreset(p.id);
-                    };
-        
-                    wrapper.appendChild(btn);
-                    wrapper.appendChild(delBtn);
-                    container.appendChild(wrapper);
-                });
-            }
-        }
+        let isEditMode = false;
+		let sortableInstance = null;
+
+		function toggleEditMode() {
+			isEditMode = !isEditMode;
+			const btn = document.getElementById('btn-toggle-edit');
+			const container = document.getElementById('presetGroup');
+			
+			btn.innerText = isEditMode ? '✅ Terminer' : '✏️ Éditer';
+			btn.style.background = isEditMode ? '#2ecc71' : '#444';
+			
+			container.classList.toggle('is-editing', isEditMode);
+
+			if (isEditMode) {
+				sortableInstance = new Sortable(container, {
+					animation: 150,
+					handle: '.preset-btn-container', 
+					onEnd: async function () {
+						// On récupère tous les wrappers dans leur nouvel ordre visuel
+						const items = container.querySelectorAll('.preset-btn-container');
+						
+						// On crée une liste de promesses pour mettre à jour chaque position
+						const updates = Array.from(items).map((el, index) => {
+							const presetId = el.getAttribute('data-id');
+							return sbClient
+								.from('presets')
+								.update({ position: index })
+								.eq('id', presetId);
+						});
+
+						// Envoi groupé à Supabase
+						const results = await Promise.all(updates);
+						
+						// Petit feedback console pour debug
+						const errors = results.filter(r => r.error);
+						if (errors.length > 0) console.error("Erreurs de synchro position:", errors);
+						else console.log("Ordre synchronisé !");
+					}
+				});
+			} else if (sortableInstance) {
+				sortableInstance.destroy();
+			}
+			loadPresets(); 
+		}
+
+		async function loadPresets() {
+			const { data: { user } } = await sbClient.auth.getUser();
+			if (!user) return;
+
+			// On trie désormais par la colonne 'position'
+			const { data: presets } = await sbClient.from('presets')
+				.select('*')
+				.order('position', { ascending: true });
+
+			const container = document.getElementById('presetGroup');
+			container.innerHTML = '';
+
+			if (presets) {
+				presets.forEach(p => {
+					const wrapper = document.createElement('div');
+					wrapper.className = 'preset-btn-container';
+					// CRUCIAL : On stocke l'ID pour le retrouver après le drag & drop
+					wrapper.setAttribute('data-id', p.id); 
+
+					const btn = document.createElement('button');
+					btn.innerHTML = isEditMode ? `<span class="drag-handle">☰</span> ${p.label}` : p.label;
+					btn.style.backgroundColor = p.color || '#3498db';
+					btn.style.color = 'white';
+					btn.style.padding = '8px 12px';
+					btn.style.border = 'none';
+					btn.style.borderRadius = '6px';
+					btn.style.fontSize = '10px';
+					btn.style.fontWeight = 'bold';
+					btn.style.cursor = isEditMode ? 'grab' : 'pointer';
+					
+					btn.onclick = () => {
+						if (isEditMode) {
+							editPreset(p);
+						} else {
+							applyPreset(p.situation, p.my_pos, p.vs_pos, btn, p.stack_depth);
+						}
+					};
+
+					wrapper.appendChild(btn);
+
+					if (!isEditMode) {
+						const delBtn = document.createElement('button');
+						delBtn.className = 'delete-preset-btn';
+						delBtn.innerHTML = '×';
+						delBtn.onclick = (e) => {
+							e.stopPropagation();
+							if(confirm(`Supprimer "${p.label}" ?`)) deletePreset(p.id);
+						};
+						wrapper.appendChild(delBtn);
+					}
+
+					container.appendChild(wrapper);
+				});
+			}
+		}
         
         async function addCurrentAsPreset() {
             const label = prompt("Nom du favori (ex: BTN vs CO) :");
@@ -766,8 +834,9 @@
                 situation: currentTab,
                 my_pos: currentPos,
                 vs_pos: currentVsPos,
-                stack_depth: currentStack, // Vérifiez bien que ce nom correspond au SQL
-                color: color
+                stack_depth: currentStack, 
+                color: color,
+				position: 999 // Sera mis à jour proprement au prochain drag&drop
             });
         
             if (error) {
