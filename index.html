@@ -119,6 +119,52 @@
 		.is-editing .delete-preset-btn {
 			display: none; /* On cache la croix de suppression standard pour ne pas surcharger */
 		}
+		
+		/* Cache les anciens sélecteurs */
+		#posSelect, #vsPosSelect, #stackSelect {
+			display: none !important;
+		}
+
+		/* Conteneur des nouveaux boutons */
+		.button-group-container {
+			display: flex;
+			gap: 6px;
+			overflow-x: auto;
+			padding: 4px 2px;
+			scrollbar-width: none; /* Firefox */
+		}
+		.button-group-container::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+
+		.round-selector-btn {
+			flex: 0 0 auto;
+			min-width: 42px;
+			height: 42px;
+			border-radius: 50%; /* Bouton rond */
+			border: 2px solid #333;
+			background: #2a2a2a;
+			color: #bbb;
+			font-size: 11px;
+			font-weight: bold;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: all 0.2s ease;
+		}
+
+		.round-selector-btn.active {
+			background: #3498db;
+			color: white;
+			border-color: #5dade2;
+			box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+			transform: scale(1.05);
+		}
+
+		/* Style spécifique pour le Stack (un peu plus large si besoin) */
+		.stack-btn {
+			border-radius: 20px;
+			min-width: 55px;
+		}
         
         #login-overlay { position: fixed; inset: 0; background: #121212; display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 15px; }
         input { padding: 12px; border-radius: 6px; border: 1px solid #333; width: 250px; background: #1e1e1e; color: white; }
@@ -143,7 +189,8 @@
         <div class="controls">
             <div style="display: flex; flex-direction: column; gap: 4px;">
                 <label style="font-size: 10px; color: #f39c12; font-weight: bold; text-transform: uppercase;">Profondeur du Stack</label>
-                <select id="stackSelect" onchange="clearPresetStyle(); refreshData()"></select>
+                <div id="stackBtnGroup" class="button-group-container"></div>
+				<select id="stackSelect" onchange="clearPresetStyle(); refreshData()"></select>
             </div>
         
             <div style="display: flex; flex-direction: column; gap: 5px; margin: 10px 0;">
@@ -161,7 +208,8 @@
         
             <div style="display: flex; flex-direction: column; gap: 4px;">
                 <label style="font-size: 10px; color: #3498db; font-weight: bold; text-transform: uppercase;">Ma Position</label>
-                <select id="posSelect" onchange="clearPresetStyle(); updateVsPosOptions(); refreshData();">
+                <div id="posBtnGroup" class="button-group-container"></div>
+				<select id="posSelect" onchange="clearPresetStyle(); updateVsPosOptions(); refreshData();">
                     <option value="UTG">UTG</option><option value="UTG+1">UTG+1</option>
                     <option value="MP">LJ</option><option value="HJ">HJ</option>
                     <option value="CO">CO</option><option value="BTN">BTN</option>
@@ -171,7 +219,8 @@
         
             <div id="vsPosContainer" style="display: none; flex-direction: column; gap: 4px;">
                 <label style="font-size: 10px; color: #e74c3c; font-weight: bold; text-transform: uppercase;">Vs Open de</label>
-                <select id="vsPosSelect" onchange="clearPresetStyle(); refreshData();"></select>
+                <div id="vsPosBtnGroup" class="button-group-container"></div> 
+				<select id="vsPosSelect" onchange="clearPresetStyle(); refreshData();"></select>
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 5px;">
@@ -424,6 +473,14 @@
 				posSelect.querySelector('option[value="BB"]').style.display = 'block';
 			}
 			// -----------------------------------
+			
+			// AJOUT : Si on passe en DEFENSE et que la position était UTG, on bascule sur UTG+1
+			if (tab === 'DEFENSE') {
+				const posSelect = document.getElementById('posSelect');
+				if (posSelect.value === 'UTG') {
+					posSelect.value = 'UTG+1'; 
+				}
+			}
 
 			if (tab === 'PUSH') {
 				s.innerHTML = Array.from({length:15}, (_,i)=>`<option value="${15-i}">${15-i} BB</option>`).join('');
@@ -442,7 +499,8 @@
 				vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none';
 			}
 			
-			updateVsPosOptions(); 
+			updateVsPosOptions();
+			updateAllButtonGroups();			
 			if (!skipRefresh) refreshData();
 		}
 
@@ -456,6 +514,7 @@
                 else html += `<option value="${POSITION_ORDER[i]}">${POSITION_ORDER[i]}</option>`;
             }
             document.getElementById('vsPosSelect').innerHTML = html || `<option value="ANY">ANY</option>`;
+			updateAllButtonGroups();
         }
 
         // Fonction pour retirer le contour doré des presets
@@ -485,6 +544,10 @@
                     document.getElementById('vsPosSelect').value = vsP;
                 }
                 refreshData();
+				
+				// On force la mise à jour visuelle des nouveaux boutons
+				updateAllButtonGroups();
+				
             }, 50);
         }
 
@@ -893,6 +956,56 @@
             await sbClient.from('presets').delete().eq('id', id);
             loadPresets();
         } //fin favoris
+		
+		// Fonction universelle pour créer les groupes de boutons
+		function renderButtonGroup(selectId, containerId, isStack = false) {
+			const select = document.getElementById(selectId);
+			const container = document.getElementById(containerId);
+			if (!select || !container) return;
+
+			container.innerHTML = ''; // On vide le conteneur
+
+			Array.from(select.options).forEach(option => {
+				
+				// --- LOGIQUE DE FILTRE ---
+				// Si on est en mode DEFENSE, on cache le bouton UTG pour "Ma Position"
+				if (currentTab === 'DEFENSE' && selectId === 'posSelect' && option.value === 'UTG') {
+					return; // On passe à l'option suivante sans créer le bouton
+				}
+
+				// Garder aussi ton filtre existant pour la BB en RFI/PUSH si tu l'avais mis
+				if ((currentTab === 'RFI' || currentTab === 'PUSH') && selectId === 'posSelect' && option.value === 'BB') {
+					return;
+				}
+				// -------------------------
+				
+				const btn = document.createElement('button');
+				btn.className = isStack ? 'round-selector-btn stack-btn' : 'round-selector-btn';
+				if (select.value === option.value) btn.classList.add('active');
+				
+				btn.innerText = option.text;
+				
+				btn.onclick = () => {
+					select.value = option.value;
+					// On déclenche manuellement les événements liés au select
+					if (selectId === 'posSelect') updateVsPosOptions();
+					
+					refreshData(); 
+					updateAllButtonGroups(); // On rafraîchit l'apparence des boutons
+					clearPresetStyle(); // On enlève le style "favori" car on a modifié un paramètre
+				};
+				container.appendChild(btn);
+			});
+		}
+
+		// Met à jour tous les groupes d'un coup
+		function updateAllButtonGroups() {
+			renderButtonGroup('posSelect', 'posBtnGroup');
+			renderButtonGroup('stackSelect', 'stackBtnGroup', true);
+			if (document.getElementById('vsPosSelect')) {
+				renderButtonGroup('vsPosSelect', 'vsPosBtnGroup');
+			}
+		}
         
         sbClient.auth.onAuthStateChange((event, session) => { 
             if (session) { 
@@ -908,6 +1021,7 @@
                         document.getElementById('stackSelect').value = state.stack;
                         if (state.tab === 'DEFENSE' && document.getElementById('vsPosSelect')) document.getElementById('vsPosSelect').value = state.vsPos;
                         refreshData();
+						updateAllButtonGroups();
                     }, 100);
                 } else switchTab('RFI'); 
             } 
