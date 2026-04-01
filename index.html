@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poker Playbook Pro v1.3</title>
+    <title>Poker Playbook Pro v1.4.1</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -20,7 +20,7 @@
 
         /* Grille de Poker */
         .grid { display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; }
-        .cell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; cursor: pointer; border-radius: 2px; border: 1px solid rgba(255,255,255,0.03); transition: background 0.1s; }
+        .cell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; cursor: pointer; border-radius: 2px; border: 1px solid rgba(255,255,255,0.03); transition: background 0.1s; }
 
         /* Animation flash améliorée pour ne pas confondre avec les couleurs d'action */
         .quiz-flash-correct { 
@@ -41,6 +41,7 @@
         .action-blue { background: #3498db; color: white; }
         .action-green { background: #2ecc71; color: white; }
         .action-orange { background: #f39c12; color: white; }
+		.action-yellow { background: #8AFC38; color: #317402;}
         .action-purple { background: #9b59b6; color: white; }
         .action-l-fold { background: #5d6d7e; color: #ebf5fb; }
         .action-l-call { background: #48c9b0; color: #145a32; }
@@ -48,7 +49,8 @@
         .action-l-ai { background: #f1948a; color: #641e16; }
         .action-o-fold { background: #2e86de; color: white; }
         .action-o-call { background: #28b463; color: white; }
-        .action-o-4bet { background: #d35400; color: white; }
+        .action-o-4bet { background: #f39c12; color: white; }
+		.action-o-4bet-ai { background: #8AFC38; color: #317402;}
         .action-o-ai { background: #884ea0; color: white; }
 
         .palette { margin: 15px 0; gap: 5px; }
@@ -313,13 +315,15 @@
             { id: 'action-l-fold', label: 'L-FOLD', class: 'action-l-fold' }, { id: 'action-l-call', label: 'L-CALL', class: 'action-l-call' },
             { id: 'action-l-3bet', label: 'L-3BET', class: 'action-l-3bet' }, { id: 'action-l-ai', label: 'L-AI', class: 'action-l-ai' },
             { id: 'action-o-fold', label: 'O-FOLD', class: 'action-o-fold' }, { id: 'action-o-call', label: 'O-CALL', class: 'action-o-call' }, 
-            { id: 'action-o-4bet', label: 'O-4BET', class: 'action-o-4bet' }, { id: 'action-o-ai', label: 'O-AI', class: 'action-o-ai' }
+            { id: 'action-o-4bet', label: 'O-4BET', class: 'action-o-4bet' }, { id: 'action-o-4bet-ai', label: 'O-ALL-IN', class: 'action-o-4bet-ai' },
+			{ id: 'action-o-ai', label: 'ALL-IN', class: 'action-o-ai' }
         ];
 
         const actionsStd = [
             { id: 'fold', label: 'FOLD', class: 'fold' },
             { id: 'action-blue', label: 'R-FOLD', class: 'action-blue' }, { id: 'action-green', label: 'R-CALL', class: 'action-green' },
-            { id: 'action-orange', label: 'R-4BET', class: 'action-orange' }, { id: 'action-purple', label: 'R-ALL-IN', class: 'action-purple' }
+            { id: 'action-orange', label: 'R-4BET', class: 'action-orange' }, { id: 'action-yellow', label: 'R-ALL-IN', class: 'action-yellow' },
+			{ id: 'action-purple', label: 'ALL-IN', class: 'action-purple' }
         ];
 
         const actionsPush = [
@@ -457,7 +461,8 @@
                 let w = c.dataset.hand.includes('s') ? 4 : (c.dataset.hand.includes('o') ? 12 : 6);
                 total += w;
                 if (!c.classList.contains('fold')) played += w;
-                if (c.className.includes('-o-ai') || c.className.includes('action-purple') || c.className.includes('action-orange')) aggro += w;
+                if (c.className.includes('-ai') || c.className.includes('action-purple') || c.className.includes('action-orange')
+				 || c.className.includes('action-yellow') || c.className.includes('bet')) aggro += w;
             });
             document.getElementById('statVPIP').innerText = (played/total*100).toFixed(1) + "%";
             document.getElementById('statPFR').innerText = (aggro/total*100).toFixed(1) + "%";
@@ -509,7 +514,6 @@
 					<option value="30">30 BB</option>
 					<option value="20">20 BB</option>
 					<option value="14">14 BB</option>
-					<option value="10">10 BB</option>
 				`;
 				vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none';
 			}
