@@ -47,7 +47,7 @@
         .action-l-call { background: #48c9b0; color: #145a32; }
         .action-l-3bet { background: #edbb99; color: #6e2c00; }
         .action-l-ai { background: #f1948a; color: #641e16; }
-        .action-o-fold { background: #2e86de; color: white; }
+        .action-o-fold { background: #3498db; color: white; }
         .action-o-call { background: #28b463; color: white; }
         .action-o-4bet { background: #f39c12; color: white; }
 		.action-o-4bet-ai { background: #8AFC38; color: #317402;}
@@ -314,8 +314,8 @@
             { id: 'fold', label: 'FOLD', class: 'fold' },
             { id: 'action-l-fold', label: 'L-FOLD', class: 'action-l-fold' }, { id: 'action-l-call', label: 'L-CALL', class: 'action-l-call' },
             { id: 'action-l-3bet', label: 'L-3BET', class: 'action-l-3bet' }, { id: 'action-l-ai', label: 'L-AI', class: 'action-l-ai' },
-            { id: 'action-o-fold', label: 'O-FOLD', class: 'action-o-fold' }, { id: 'action-o-call', label: 'O-CALL', class: 'action-o-call' }, 
-            { id: 'action-o-4bet', label: 'O-4BET', class: 'action-o-4bet' }, { id: 'action-o-4bet-ai', label: 'O-ALL-IN', class: 'action-o-4bet-ai' },
+            { id: 'action-o-fold', label: 'R-FOLD', class: 'action-o-fold' }, { id: 'action-o-call', label: 'R-CALL', class: 'action-o-call' }, 
+            { id: 'action-o-4bet', label: 'R-4BET', class: 'action-o-4bet' }, { id: 'action-o-4bet-ai', label: 'R-ALL-IN', class: 'action-o-4bet-ai' },
 			{ id: 'action-o-ai', label: 'ALL-IN', class: 'action-o-ai' }
         ];
 
@@ -370,6 +370,7 @@
         function buildPalette(targetId, isQuiz = false) {
             const pos = document.getElementById('posSelect').value;
             const vsPos = document.getElementById('vsPosSelect') ? document.getElementById('vsPosSelect').value : 'ANY';
+			const stack = document.getElementById('stackSelect').value;
             const container = document.getElementById(targetId);
             if (!container) return;
             
@@ -392,6 +393,10 @@
             }
             // Cas RFI SB (Spécifique SB avec tes 9 boutons)
             else if (pos === 'SB' && currentTab === 'RFI') {
+                list = actionsSB;
+            }
+			// Cas RFI BTN 20BB 
+            else if (pos === 'BTN' && currentTab === 'RFI' && stack === '20') {
                 list = actionsSB;
             }
             // Cas par défaut (dont DEFENSE classique)
