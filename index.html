@@ -479,43 +479,36 @@
 
         function switchTab(tab, skipRefresh = false) {
 			clearPresetStyle(); 
+			
+			// 1. SAUVEGARDER la valeur du stack actuel avant de modifier le HTML
+			const stackSelect = document.getElementById('stackSelect');
+			const previousStackValue = stackSelect.value;
+			
 			currentTab = tab;
 			
-			// Mise à jour visuelle des onglets
 			document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
 			document.getElementById('tab-' + tab).classList.add('active');
 			
-			const s = document.getElementById('stackSelect');
-			const posSelect = document.getElementById('posSelect'); // On récupère le sélecteur de position
+			const posSelect = document.getElementById('posSelect');
 			const vsContainer = document.getElementById('vsPosContainer');
 
-			// --- LOGIQUE DE RETRAIT DE LA BB ---
+			// Gestion de la position BB
 			if (tab === 'RFI' || tab === 'PUSH') {
-				// Si on arrive sur RFI/PUSH alors qu'on était en BB, on bascule par défaut sur SB
-				if (posSelect.value === 'BB') {
-					posSelect.value = 'SB';
-				}
-				// On cache l'option BB
+				if (posSelect.value === 'BB') posSelect.value = 'SB';
 				posSelect.querySelector('option[value="BB"]').style.display = 'none';
 			} else {
-				// On réaffiche la BB pour le mode DEFENSE
 				posSelect.querySelector('option[value="BB"]').style.display = 'block';
 			}
-			// -----------------------------------
 			
-			// AJOUT : Si on passe en DEFENSE et que la position était UTG, on bascule sur UTG+1
 			if (tab === 'DEFENSE') {
-				const posSelect = document.getElementById('posSelect');
-				if (posSelect.value === 'UTG') {
-					posSelect.value = 'UTG+1'; 
-				}
+				if (posSelect.value === 'UTG') posSelect.value = 'UTG+1'; 
 			}
 
+			// 2. METTRE À JOUR le contenu des options
 			if (tab === 'PUSH') {
-				s.innerHTML = Array.from({length:15}, (_,i)=>`<option value="${15-i}">${15-i} BB</option>`).join('');
-				vsContainer.style.display = 'none';
+				stackSelect.innerHTML = Array.from({length:15}, (_,i)=>`<option value="${15-i}">${15-i} BB</option>`).join('');
 			} else {
-				s.innerHTML = `
+				stackSelect.innerHTML = `
 					<option value="100">100 BB</option>
 					<option value="80">80 BB</option>
 					<option value="60">60 BB</option>
@@ -527,6 +520,12 @@
 				vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none';
 			}
 			
+			// 3. RÉAPPLIQUER la valeur précédente si elle existe dans la nouvelle liste
+			// (Par exemple, si on passe de 20BB Open à Défense, 20BB existe dans les deux)
+			if (Array.from(stackSelect.options).some(opt => opt.value === previousStackValue)) {
+				stackSelect.value = previousStackValue;
+			}
+
 			updateVsPosOptions();
 			updateAllButtonGroups();			
 			if (!skipRefresh) refreshData();
