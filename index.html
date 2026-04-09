@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poker Playbook Pro v1.3</title>
+    <title>Poker Playbook Pro v1.5</title>
+	<link rel="apple-touch-icon" sizes="180x180" href="icon/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="icon/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="icon/favicon-16x16.png">
+	<link rel="manifest" href="icon/site.webmanifest">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -20,7 +24,7 @@
 
         /* Grille de Poker */
         .grid { display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; }
-        .cell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; cursor: pointer; border-radius: 2px; border: 1px solid rgba(255,255,255,0.03); transition: background 0.1s; }
+        .cell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; cursor: pointer; border-radius: 2px; border: 1px solid rgba(255,255,255,0.03); transition: background 0.1s; }
 
         /* Animation flash améliorée pour ne pas confondre avec les couleurs d'action */
         .quiz-flash-correct { 
@@ -41,14 +45,16 @@
         .action-blue { background: #3498db; color: white; }
         .action-green { background: #2ecc71; color: white; }
         .action-orange { background: #f39c12; color: white; }
+		.action-yellow { background: #8AFC38; color: #317402;}
         .action-purple { background: #9b59b6; color: white; }
         .action-l-fold { background: #5d6d7e; color: #ebf5fb; }
         .action-l-call { background: #48c9b0; color: #145a32; }
         .action-l-3bet { background: #edbb99; color: #6e2c00; }
         .action-l-ai { background: #f1948a; color: #641e16; }
-        .action-o-fold { background: #2e86de; color: white; }
+        .action-o-fold { background: #3498db; color: white; }
         .action-o-call { background: #28b463; color: white; }
-        .action-o-4bet { background: #d35400; color: white; }
+        .action-o-4bet { background: #f39c12; color: white; }
+		.action-o-4bet-ai { background: #8AFC38; color: #317402;}
         .action-o-ai { background: #884ea0; color: white; }
 
         .palette { margin: 15px 0; gap: 5px; }
@@ -312,14 +318,16 @@
             { id: 'fold', label: 'FOLD', class: 'fold' },
             { id: 'action-l-fold', label: 'L-FOLD', class: 'action-l-fold' }, { id: 'action-l-call', label: 'L-CALL', class: 'action-l-call' },
             { id: 'action-l-3bet', label: 'L-3BET', class: 'action-l-3bet' }, { id: 'action-l-ai', label: 'L-AI', class: 'action-l-ai' },
-            { id: 'action-o-fold', label: 'O-FOLD', class: 'action-o-fold' }, { id: 'action-o-call', label: 'O-CALL', class: 'action-o-call' }, 
-            { id: 'action-o-4bet', label: 'O-4BET', class: 'action-o-4bet' }, { id: 'action-o-ai', label: 'O-AI', class: 'action-o-ai' }
+            { id: 'action-o-fold', label: 'R-FOLD', class: 'action-o-fold' }, { id: 'action-o-call', label: 'R-CALL', class: 'action-o-call' }, 
+            { id: 'action-o-4bet', label: 'R-4BET', class: 'action-o-4bet' }, { id: 'action-o-4bet-ai', label: 'R-ALL-IN', class: 'action-o-4bet-ai' },
+			{ id: 'action-o-ai', label: 'ALL-IN', class: 'action-o-ai' }
         ];
 
         const actionsStd = [
             { id: 'fold', label: 'FOLD', class: 'fold' },
             { id: 'action-blue', label: 'R-FOLD', class: 'action-blue' }, { id: 'action-green', label: 'R-CALL', class: 'action-green' },
-            { id: 'action-orange', label: 'R-4BET', class: 'action-orange' }, { id: 'action-purple', label: 'R-ALL-IN', class: 'action-purple' }
+            { id: 'action-orange', label: 'R-4BET', class: 'action-orange' }, { id: 'action-yellow', label: 'R-ALL-IN', class: 'action-yellow' },
+			{ id: 'action-purple', label: 'ALL-IN', class: 'action-purple' }
         ];
 
         const actionsPush = [
@@ -366,6 +374,7 @@
         function buildPalette(targetId, isQuiz = false) {
             const pos = document.getElementById('posSelect').value;
             const vsPos = document.getElementById('vsPosSelect') ? document.getElementById('vsPosSelect').value : 'ANY';
+			const stack = document.getElementById('stackSelect').value;
             const container = document.getElementById(targetId);
             if (!container) return;
             
@@ -388,6 +397,10 @@
             }
             // Cas RFI SB (Spécifique SB avec tes 9 boutons)
             else if (pos === 'SB' && currentTab === 'RFI') {
+                list = actionsSB;
+            }
+			// Cas RFI BTN 20BB 
+            else if (pos === 'BTN' && currentTab === 'RFI' && stack === '20') {
                 list = actionsSB;
             }
             // Cas par défaut (dont DEFENSE classique)
@@ -457,7 +470,8 @@
                 let w = c.dataset.hand.includes('s') ? 4 : (c.dataset.hand.includes('o') ? 12 : 6);
                 total += w;
                 if (!c.classList.contains('fold')) played += w;
-                if (c.className.includes('-o-ai') || c.className.includes('action-purple') || c.className.includes('action-orange')) aggro += w;
+                if (c.className.includes('-ai') || c.className.includes('action-purple') || c.className.includes('action-orange')
+				 || c.className.includes('action-yellow') || c.className.includes('bet')) aggro += w;
             });
             document.getElementById('statVPIP').innerText = (played/total*100).toFixed(1) + "%";
             document.getElementById('statPFR').innerText = (aggro/total*100).toFixed(1) + "%";
@@ -465,43 +479,36 @@
 
         function switchTab(tab, skipRefresh = false) {
 			clearPresetStyle(); 
+			
+			// 1. SAUVEGARDER la valeur du stack actuel avant de modifier le HTML
+			const stackSelect = document.getElementById('stackSelect');
+			const previousStackValue = stackSelect.value;
+			
 			currentTab = tab;
 			
-			// Mise à jour visuelle des onglets
 			document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
 			document.getElementById('tab-' + tab).classList.add('active');
 			
-			const s = document.getElementById('stackSelect');
-			const posSelect = document.getElementById('posSelect'); // On récupère le sélecteur de position
+			const posSelect = document.getElementById('posSelect');
 			const vsContainer = document.getElementById('vsPosContainer');
 
-			// --- LOGIQUE DE RETRAIT DE LA BB ---
+			// Gestion de la position BB
 			if (tab === 'RFI' || tab === 'PUSH') {
-				// Si on arrive sur RFI/PUSH alors qu'on était en BB, on bascule par défaut sur SB
-				if (posSelect.value === 'BB') {
-					posSelect.value = 'SB';
-				}
-				// On cache l'option BB
+				if (posSelect.value === 'BB') posSelect.value = 'SB';
 				posSelect.querySelector('option[value="BB"]').style.display = 'none';
 			} else {
-				// On réaffiche la BB pour le mode DEFENSE
 				posSelect.querySelector('option[value="BB"]').style.display = 'block';
 			}
-			// -----------------------------------
 			
-			// AJOUT : Si on passe en DEFENSE et que la position était UTG, on bascule sur UTG+1
 			if (tab === 'DEFENSE') {
-				const posSelect = document.getElementById('posSelect');
-				if (posSelect.value === 'UTG') {
-					posSelect.value = 'UTG+1'; 
-				}
+				if (posSelect.value === 'UTG') posSelect.value = 'UTG+1'; 
 			}
 
+			// 2. METTRE À JOUR le contenu des options
 			if (tab === 'PUSH') {
-				s.innerHTML = Array.from({length:15}, (_,i)=>`<option value="${15-i}">${15-i} BB</option>`).join('');
-				vsContainer.style.display = 'none';
+				stackSelect.innerHTML = Array.from({length:15}, (_,i)=>`<option value="${15-i}">${15-i} BB</option>`).join('');
 			} else {
-				s.innerHTML = `
+				stackSelect.innerHTML = `
 					<option value="100">100 BB</option>
 					<option value="80">80 BB</option>
 					<option value="60">60 BB</option>
@@ -509,11 +516,16 @@
 					<option value="30">30 BB</option>
 					<option value="20">20 BB</option>
 					<option value="14">14 BB</option>
-					<option value="10">10 BB</option>
 				`;
 				vsContainer.style.display = (tab === 'DEFENSE') ? 'flex' : 'none';
 			}
 			
+			// 3. RÉAPPLIQUER la valeur précédente si elle existe dans la nouvelle liste
+			// (Par exemple, si on passe de 20BB Open à Défense, 20BB existe dans les deux)
+			if (Array.from(stackSelect.options).some(opt => opt.value === previousStackValue)) {
+				stackSelect.value = previousStackValue;
+			}
+
 			updateVsPosOptions();
 			updateAllButtonGroups();			
 			if (!skipRefresh) refreshData();
